@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"for p in 8210 8211 8212 8213; do echo \\\"== $p ==\\\"; lsof -nP -iTCP:$p -sTCP:LISTEN 2>&1; done\",\"description\":\"Find a genuinely free port for isolated test run\"}",
+  "error": "Exit code 1\n== 8210 ==\n== 8211 ==\n== 8212 ==\n== 8213 ==",
+  "timestamp": "2026-07-30T18:31:16.724Z",
+  "retry_count": 1
+}

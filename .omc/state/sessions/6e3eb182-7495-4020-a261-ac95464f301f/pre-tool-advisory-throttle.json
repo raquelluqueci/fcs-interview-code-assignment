@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "entries": {
+    "79a93d4a2f8f50b95f852280616242fee1855dc99a3c75211917f55e72e95fae": {
+      "last_emitted_at_ms": 1785436871452,
+      "message": "Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests)."
+    },
+    "c0e0eadfc3a1173f03531af46901ab7be51239b2725207e4978596173d1d1495": {
+      "last_emitted_at_ms": 1785436328824,
+      "message": "Spawning agent: oh-my-claudecode:critic (sonnet) | Task: Crítica adversarial do estado versionado"
+    },
+    "445ed27a3872b681d98190bae61ccb84954e1bc4e140df5370be958dee776b3a": {
+      "last_emitted_at_ms": 1785435724935,
+      "message": "Verify changes work after editing. Test functionality before marking complete."
+    },
+    "29e7b0a453d9e2b4770110a1d7829236a04f7261df211e7446e85c0c50900048": {
+      "last_emitted_at_ms": 1785434519896,
+      "message": "Spawning agent: oh-my-claudecode:writer (sonnet) | Task: Gerar README bilingue do repo"
+    },
+    "5550046e77fa572990e8c6f3ea97ee9a818e3172e12a33ab8cb3eca3c2558673": {
+      "last_emitted_at_ms": 1785433386066,
+      "message": "Spawning agent: oh-my-claudecode:critic (sonnet) | Task: Crítica adversarial do plano"
+    }
+  },
+  "updated_at": "2026-07-30T18:41:11.452Z"
+}
