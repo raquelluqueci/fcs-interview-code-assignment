@@ -1,87 +1,88 @@
-# Java Code Assignment
+# java-assignment-senior — Pragmatic Variant
 
-This is a short code assignment that explores various aspects of software development, including API implementation, documentation, persistence layer handling, and testing.
+Completion of the [warehouse case study](../case-study/BRIEFING.md) written the way a pragmatic
+**senior developer** would: minimum viable class count, logic co-located where it is used, and
+direct use of the framework's error model. The architecture-first counterpart lives in
+[`java-assignment-architect`](../java-assignment-architect/README.md); the untouched original brief
+is in [`java-assignment`](../java-assignment/README.md). See the
+[repository README](../../README.md) for the full comparison and setup details.
 
-## About the assignment
+## Contents
 
-You will find the tasks of this assignment on [CODE_ASSIGNMENT](CODE_ASSIGNMENT.md) file
+- [Design philosophy](#design-philosophy)
+- [What was implemented](#what-was-implemented)
+- [Key decisions](#key-decisions)
+- [Package layout](#package-layout)
+- [Build & test](#build--test)
+- [Related documents](#related-documents)
 
-## About the code base
+## Design philosophy
 
-This is based on https://github.com/quarkusio/quarkus-quickstarts
+Deliver the exact same behavior with the fewest moving parts. Validations live inline in the use
+cases and throw `WebApplicationException` with the right HTTP status directly; the bonus feature is
+a single Panache entity plus one REST resource. No speculative abstractions — the existing
+hexagonal skeleton of the Warehouse package is respected, but nothing new is added on top of it.
 
-### Requirements
+## What was implemented
 
-To compile and run this demo you will need:
+| Task | Where |
+|---|---|
+| `LocationGateway.resolveByIdentifier` | `location/LocationGateway.java` (+ `@ApplicationScoped`) |
+| Store legacy sync **after commit** | `stores/StoreResource` via `TransactionSynchronizationRegistry` (`afterCompletion`, only on `STATUS_COMMITTED`) |
+| Warehouse create / get / list / archive / replace | `warehouses/adapters/restapi/WarehouseResourceImpl` + use cases |
+| All warehouse validations (unique BU code, valid location, max warehouses per location, capacity/stock rules) | inline in `warehouses/domain/usecases/*` |
+| Replace-specific rules (capacity accommodates stock, stock match) | `warehouses/domain/usecases/ReplaceWarehouseUseCase` |
+| Bonus: fulfilment associations (max 2 WH/product/store, 3 WH/store, 5 products/WH) | `fulfilment/Fulfilment` (Panache entity) + `fulfilment/FulfilmentResource` |
+| Assignment questions | [`QUESTIONS.md`](QUESTIONS.md) |
 
-- JDK 17+
+## Key decisions
 
-In addition, you will need either a PostgreSQL database, or Docker to run one.
+- **`TransactionSynchronizationRegistry` over CDI events** — registers the legacy-gateway call as
+  an `afterCompletion` callback guarded by `STATUS_COMMITTED`, avoiding the classic
+  self-invocation pitfall of `@Transactional` without introducing extra classes.
+- **`getAll()` filters `archivedAt is null`** — the warehouse listing was returning archived rows
+  (real bug found and fixed during implementation).
+- **201 on POST via injected `RoutingContext`** — RESTEasy Reactive reads the response status from
+  the OpenAPI-generated interface method, so the implementation sets it explicitly on the Vert.x
+  response.
+- **DB-level uniqueness** for fulfilment associations (`@UniqueConstraint` on the triple) in
+  addition to the inline checks.
 
-### Configuring JDK 17+
+## Package layout
 
-Make sure that `JAVA_HOME` environment variables has been set, and that a JDK 17+ `java` command is on the path.
-
-## Building the demo
-
-Execute the Maven build on the root of the project:
-
-```sh
-./mvnw package
+```
+src/main/java/com/fulfilment/application/monolith/
+├── fulfilment/          # Fulfilment entity + FulfilmentResource (bonus)
+├── location/
+├── products/
+├── stores/
+└── warehouses/
+    ├── adapters/{database,restapi}/
+    └── domain/{models,ports,usecases}/
 ```
 
-## Running the demo
+## Build & test
 
-### Live coding with Quarkus
-
-The Maven Quarkus plugin provides a development mode that supports
-live coding. To try this out:
+This module builds standalone or through the [parent aggregator](../pom.xml):
 
 ```sh
-./mvnw quarkus:dev
+# from the repository root — standalone
+JAVA_HOME=/usr/local/opt/openjdk@17 mvn -f fcs-interview-code-assignment-main/java-assignment-senior/pom.xml clean test
+
+# or the whole reactor (architect + senior)
+JAVA_HOME=/usr/local/opt/openjdk@17 mvn -f fcs-interview-code-assignment-main/pom.xml clean test
 ```
 
-In this mode you can make changes to the code and have the changes immediately applied, by just refreshing your browser.
+Tests use Quarkus Dev Services (disposable PostgreSQL container); with Podman instead of Docker,
+export `DOCKER_HOST` pointing at the Podman socket first (see the
+[repository README](../../README.md#installation--setup)). Test suite: **39 tests** — use case unit
+tests, REST-Assured integration tests for the Warehouse and Fulfilment APIs, and a store
+legacy-sync test proving the gateway only fires after the database transaction commits
+(`WarehouseEndpointIT` additionally runs under `@QuarkusIntegrationTest` via failsafe).
 
-    Hot reload works even when modifying your JPA entities.
-    Try it! Even the database schema will be updated on the fly.
+## Related documents
 
-## (Optional) Run Quarkus in JVM mode
-
-When you're done iterating in developer mode, you can run the application as a conventional jar file.
-
-First compile it:
-
-```sh
-./mvnw package
-```
-
-Next we need to make sure you have a PostgreSQL instance running (Quarkus automatically starts one for dev and test mode). To set up a PostgreSQL database with Docker:
-
-```sh
-docker run -it --rm=true --name quarkus_test -e POSTGRES_USER=quarkus_test -e POSTGRES_PASSWORD=quarkus_test -e POSTGRES_DB=quarkus_test -p 15432:5432 postgres:13.3
-```
-
-Connection properties for the Agroal datasource are defined in the standard Quarkus configuration file,
-`src/main/resources/application.properties`.
-
-Then run it:
-
-```sh
-java -jar ./target/quarkus-app/quarkus-run.jar
-```
-    Have a look at how fast it boots.
-    Or measure total native memory consumption...
-
-
-## See the demo in your browser
-
-Navigate to:
-
-<http://localhost:8080/index.html>
-
-Have fun, and join the team of contributors!
-
-## Troubleshooting
-
-Using **IntelliJ**, in case the generated code is not recognized and you have compilation failures, you may need to add `target/.../jaxrs` folder as "generated sources".
+- [`CODE_ASSIGNMENT.md`](CODE_ASSIGNMENT.md) — the task list this module fulfils
+- [`QUESTIONS.md`](QUESTIONS.md) — answered from the senior developer's perspective
+- [`../case-study/BRIEFING.md`](../case-study/BRIEFING.md) — domain briefing
+- [`../java-assignment-architect/README.md`](../java-assignment-architect/README.md) — the architecture-first counterpart

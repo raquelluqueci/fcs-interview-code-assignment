@@ -158,10 +158,19 @@ Both are functionally equivalent from the API consumer's point of view — the O
 - Maven (or the bundled `./mvnw` wrapper)
 - A container runtime for the PostgreSQL Dev Service used by tests (Docker or Podman)
 
-### Build & test a module
+### Build & test
 
-Each module (`java-assignment`, `java-assignment-architect`, `java-assignment-senior`) is an
-independent Maven project. Using `mvn -f <pom.xml>` works from the repository root:
+The two completed variants are aggregated by a
+[parent `pom.xml`](fcs-interview-code-assignment-main/pom.xml)
+(`com.inventorix:java-code-assignment-parent`), so a single reactor build validates both:
+
+```sh
+JAVA_HOME=/usr/local/opt/openjdk@17 mvn -s /Users/odin/.m2/settings-central.xml \
+  -f fcs-interview-code-assignment-main/pom.xml clean test
+```
+
+Each module also builds standalone (`java-assignment`, the untouched original, stays out of the
+reactor on purpose). Using `mvn -f <pom.xml>` works from the repository root:
 
 ```sh
 JAVA_HOME=/usr/local/opt/openjdk@17 mvn -s /Users/odin/.m2/settings-central.xml \
@@ -318,6 +327,7 @@ FnCS_Casestudy2/                         # repo root
 ├── README.md                            # this file (case-study index, English)
 ├── README-br.md                         # Brazilian Portuguese counterpart
 └── fcs-interview-code-assignment-main/
+    ├── pom.xml                          # parent aggregator: java-code-assignment-parent (architect + senior)
     ├── README.md                        # upstream Quarkus quickstart README (per-module build/run notes)
     ├── LICENSE                          # MIT
     ├── case-study/
@@ -332,6 +342,7 @@ FnCS_Casestudy2/                         # repo root
     │       ├── stores/                  # Store CRUD + LegacyStoreManagerGateway
     │       └── warehouses/              # Warehouse domain (stub use cases)
     ├── java-assignment-architect/       # DDD/hexagonal-purist implementation
+    │   ├── README.md                    # variant-specific docs (philosophy, decisions, build)
     │   └── src/main/java/com/fulfilment/application/monolith/
     │       ├── fulfilment/
     │       │   ├── adapters/{database,restapi}/
@@ -343,6 +354,7 @@ FnCS_Casestudy2/                         # repo root
     │           ├── adapters/{database,restapi}/
     │           └── domain/{exceptions,models,ports,usecases,validation}/
     └── java-assignment-senior/          # Pragmatic senior-dev implementation
+        ├── README.md                    # variant-specific docs (philosophy, decisions, build)
         └── src/main/java/com/fulfilment/application/monolith/
             ├── fulfilment/              # Fulfilment.java (Panache entity) + FulfilmentResource
             ├── location/
