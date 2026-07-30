@@ -1,2 +1,13 @@
 .log
 .DS_Store
+
+# Local evaluation reports (not for GitHub)
+AVALIACAO_IMPLEMENTACOES.md
+AVALIACAO_*.md
+EVALUATION_*.md
+**/.DS_Store
+.omc/
+__MACOSX/
+.git-ok.sh
+**/target/
+.remember/

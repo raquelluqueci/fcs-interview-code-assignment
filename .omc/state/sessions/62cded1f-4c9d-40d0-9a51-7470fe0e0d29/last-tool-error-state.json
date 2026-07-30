@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"lsof -nP -iTCP:8091 -sTCP:LISTEN 2>/dev/null; echo \\\"---\\\"; lsof -nP -iTCP:8081 -sTCP:LISTEN 2>/dev/null\",\"description\":\"Check what is listening on ports 8091 and 8081\"}",
-  "error": "Exit code 1\nCOMMAND  PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nPython  1980 odin    6u  IPv4 0x2b4e9203271d6767      0t0  TCP 127.0.0.1:8091 (LISTEN)\n---",
-  "timestamp": "2026-07-30T18:39:42.356Z",
-  "retry_count": 1
-}
