@@ -60,6 +60,10 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   }
 
   private DbWarehouse findByBusinessUnitCodeOrNull(String buCode) {
-    return find("businessUnitCode = :buCode", Parameters.with("buCode", buCode)).firstResult();
+    // a business unit code can be reused across an archive+replace history, so only the
+    // currently active warehouse (archivedAt is null) is a valid match here - callers (domain
+    // use cases) always mean "the warehouse currently identified by this code".
+    return find("businessUnitCode = :buCode and archivedAt is null", Parameters.with("buCode", buCode))
+        .firstResult();
   }
 }

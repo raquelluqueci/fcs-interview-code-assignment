@@ -4,36 +4,42 @@ import static io.restassured.RestAssured.given;
 
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /**
  * Every real {@code Location} in {@code LocationGateway} caps how many warehouses it can host
  * (1 to 5). Since {@code @QuarkusTest} keeps a single Dev Services database running for the
- * whole test run, a handful of warehouses are created once here and reused across test methods
- * (each method still uses fresh, unique products/stores) instead of minting a brand new warehouse
- * per test - which would exhaust the low-quota locations after a handful of tests.
+ * whole test run, a handful of warehouses are created once (lazily, on the first test method
+ * that runs) and reused across test methods (each still uses fresh, unique products/stores)
+ * instead of minting a brand new warehouse per test - which would exhaust the low-quota
+ * locations after a handful of tests. The pool is created from a regular {@code @BeforeEach} -
+ * not {@code @BeforeAll} - to stay on the default per-method test instance lifecycle, which is
+ * what {@code QuarkusTestExtension} reliably wires REST Assured's port/base URI against.
  */
 @QuarkusTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FulfilmentAssociationResourceTest {
 
-  private String warehouse1; // AMSTERDAM-001 - general purpose pool warehouse
-  private String warehouse2; // AMSTERDAM-002
-  private String warehouse3; // EINDHOVEN-001
-  private String warehouse4; // ZWOLLE-002
-  private String warehouse5; // AMSTERDAM-001 - 4th distinct warehouse for the per-store quota test
-  private String warehouseForProductQuota; // HELMOND-001 - dedicated to the per-warehouse quota test
+  private static volatile boolean warehousePoolInitialized = false;
+  private static String warehouse1; // AMSTERDAM-001 - general purpose pool warehouse
+  private static String warehouse2; // AMSTERDAM-002
+  private static String warehouse3; // EINDHOVEN-001
+  private static String warehouse4; // ZWOLLE-002
+  private static String warehouse5; // AMSTERDAM-001 - 4th distinct warehouse for the per-store quota test
+  private static String warehouseForProductQuota; // HELMOND-001 - dedicated to the per-warehouse quota test
 
-  @BeforeAll
-  public void createSharedWarehousePool() {
+  @BeforeEach
+  public synchronized void createSharedWarehousePoolOnce() {
+    if (warehousePoolInitialized) {
+      return;
+    }
     warehouse1 = createWarehouse("FUL.001", "AMSTERDAM-001");
     warehouse2 = createWarehouse("FUL.002", "AMSTERDAM-002");
     warehouse3 = createWarehouse("FUL.003", "EINDHOVEN-001");
     warehouse4 = createWarehouse("FUL.004", "ZWOLLE-002");
     warehouse5 = createWarehouse("FUL.005", "AMSTERDAM-001");
     warehouseForProductQuota = createWarehouse("FUL.006", "HELMOND-001");
+    warehousePoolInitialized = true;
   }
 
   private String createWarehouse(String businessUnitCode, String location) {

@@ -113,8 +113,11 @@ public class WarehouseResourceImpl implements WarehouseResource {
   }
 
   private DbWarehouse findDbWarehouseByBusinessUnitCodeOrThrow(String businessUnitCode) {
+    // a business unit code can be reused by an archived warehouse (replacement history), so the
+    // currently active one - the one callers actually care about right after create/replace -
+    // must be looked up explicitly rather than relying on insertion order.
     return warehouseRepository
-        .find("businessUnitCode", businessUnitCode)
+        .find("businessUnitCode = ?1 and archivedAt is null", businessUnitCode)
         .<DbWarehouse>firstResultOptional()
         .orElseThrow(() -> new WarehouseNotFoundException(businessUnitCode));
   }
