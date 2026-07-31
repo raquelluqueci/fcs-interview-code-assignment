@@ -170,7 +170,8 @@ echo "[allen-key] Step 4/6 — observability (otel-collector, prometheus:${PORT_
   docker.io/otel/opentelemetry-collector-contrib:0.114.0 \
   --config=/etc/otelcol/config.yaml >/dev/null
 
-"${ENGINE}" run -d --name fcs-prometheus --network "${NETWORK}" \
+# alias "prometheus" matches the provisioned Grafana datasource URL
+"${ENGINE}" run -d --name fcs-prometheus --network "${NETWORK}" --network-alias prometheus \
   -v "${RUNTIME_DIR}/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
   -v "${REPO_ROOT}/observability/prometheus/rules:/etc/prometheus/rules:ro" \
   -p "127.0.0.1:${PORT_PROMETHEUS}:9090" \

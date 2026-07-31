@@ -1,0 +1,9 @@
+# Keep the build context lean and reproducible: only sources + POMs matter.
+**/target
+**/.DS_Store
+logs
+.allen-key
+.git
+.omc
+observability/evidence
+node_modules

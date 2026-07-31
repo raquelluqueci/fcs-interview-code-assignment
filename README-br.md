@@ -3,7 +3,6 @@
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Quarkus](https://img.shields.io/badge/Quarkus-3.13.3-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-C71A36)
-![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-implementação%20completa-brightgreen)
 
 > Case study de entrevista para uma vaga de backend Quarkus/Java. Este repositório contém o
@@ -45,8 +44,8 @@ endpoints ainda lançam `UnsupportedOperationException`) e é mantido como basel
 - [Architect vs. Senior](#architect-vs-senior)
 - [Instalação / Setup](#instalação--setup)
 - [Uso](#uso)
+- [Screenshots](#screenshots)
 - [Estrutura do Projeto](#estrutura-do-projeto)
-- [Licença](#licença)
 
 ## Arquitetura
 
@@ -322,6 +321,28 @@ Rejeitado com `400`/`409` se violar qualquer uma destas regras: máximo de 2 war
 produto por store, máximo de 3 warehouses por store, máximo de 5 produtos por warehouse, ou a
 associação já existe.
 
+## Screenshots
+
+Todas as capturas abaixo vêm de uma execução real da stack completa (`./fcs-interview-code-assignment-main/allen-key.sh` — os dois apps, PostgreSQL, OTel Collector, Prometheus e Grafana em portas livres aleatórias).
+
+### Swagger UI — variante architect (`/q/swagger-ui`)
+
+![Swagger UI — architect](fcs-interview-code-assignment-main/docs/screenshots/swagger-architect.png)
+
+### Swagger UI — variante senior (`/q/swagger-ui`)
+
+![Swagger UI — senior](fcs-interview-code-assignment-main/docs/screenshots/swagger-senior.png)
+
+### Grafana — dashboard FCS Fulfilment Observability
+
+Tráfego HTTP ao vivo (request rate, error rate, latência p95, heap) coletado das duas variantes:
+
+![Dashboard Grafana](fcs-interview-code-assignment-main/docs/screenshots/grafana-dashboard.png)
+
+### Prometheus — scrape targets (todos UP)
+
+![Targets Prometheus](fcs-interview-code-assignment-main/docs/screenshots/prometheus-targets.png)
+
 ## Estrutura do Projeto
 
 ```
@@ -331,7 +352,6 @@ FnCS_Casestudy2/                         # raiz do repositório
 └── fcs-interview-code-assignment-main/
     ├── pom.xml                          # parent agregador: java-code-assignment-parent (architect + senior)
     ├── README.md                        # README upstream do Quarkus quickstart (build/run por módulo)
-    ├── LICENSE                          # MIT
     ├── case-study/
     │   ├── BRIEFING.md                  # Visão geral do domínio: Location, Store, Warehouse, Product
     │   └── CASE_STUDY.md                # Cenários de discussão (cost tracking, budgeting, etc.)
@@ -366,8 +386,3 @@ FnCS_Casestudy2/                         # raiz do repositório
                 ├── adapters/{database,restapi}/
                 └── domain/{models,ports,usecases}/
 ```
-
-## Licença
-
-MIT — ver [`fcs-interview-code-assignment-main/LICENSE`](fcs-interview-code-assignment-main/LICENSE).
-Copyright (c) 2020 Banco do Brasil S.A.
