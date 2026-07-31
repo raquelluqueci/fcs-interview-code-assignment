@@ -24,6 +24,16 @@ public class FcsOtelHttpFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         String method = request.getMethod();
         String route = normalizedRoute(request);
+
+        // The generated JAX-RS interface returns a plain Warehouse and therefore defaults
+        // POST /warehouse to 200. Preserve the 201 response declared by the OpenAPI contract.
+        String requestPath = request.getUriInfo() == null ? "" : request.getUriInfo().getPath();
+        if ("POST".equals(method)
+                && ("warehouse".equals(requestPath) || "/warehouse".equals(requestPath))
+                && response.getStatus() == 200) {
+            response.setStatus(201);
+        }
+
         metrics.recordHttp(method, route, response.getStatus());
 
         String lower = route.toLowerCase();

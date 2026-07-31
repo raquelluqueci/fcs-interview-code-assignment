@@ -7,13 +7,11 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehou
 import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
 import com.warehouse.api.WarehouseResource;
 import com.warehouse.api.beans.Warehouse;
-import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import java.util.List;
 
 @RequestScoped
@@ -26,8 +24,6 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Inject private ReplaceWarehouseOperation replaceWarehouseOperation;
 
   @Inject private ArchiveWarehouseOperation archiveWarehouseOperation;
-
-  @Context private RoutingContext routingContext;
 
   @Override
   public List<Warehouse> listAllWarehousesUnits() {
@@ -42,10 +38,6 @@ public class WarehouseResourceImpl implements WarehouseResource {
     createWarehouseOperation.create(warehouse);
 
     DbWarehouse entity = warehouseRepository.findActiveEntityByBusinessUnitCode(warehouse.businessUnitCode);
-
-    // The generated interface returns the plain `Warehouse` bean (not a Response), so the
-    // 201 status mandated by the OpenAPI spec has to be set on the underlying HTTP exchange.
-    routingContext.response().setStatusCode(201);
 
     return toWarehouseResponse(entity);
   }
