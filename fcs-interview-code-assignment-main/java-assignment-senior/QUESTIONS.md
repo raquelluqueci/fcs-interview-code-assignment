@@ -6,70 +6,74 @@ Here we have 3 questions related to the code base for you to answer. It is not a
 
 **Answer:**
 ```txt
-Yes. Today we have three different data-access styles living side by side: Store/Product use
-active-record Panache entities directly from the REST resource, Warehouse goes through a proper
-hexagonal port (WarehouseStore / WarehouseRepository) with a domain model separate from the JPA
-entity, and Fulfilment (bonus) is a plain Panache entity with the validation logic inline in the
-resource. That's three levels of ceremony for what is structurally the same kind of CRUD problem.
+Yes, but I would keep the refactor pragmatic. This implementation uses different levels
+of structure for different parts of the application: Product and Store are simple
+Panache/JAX-RS resources, Warehouse has a separate domain model with ports and use
+cases, and Fulfilment is implemented more directly in the resource with Panache queries
+and inline validation.
 
-I would not force everything into the heaviest (Warehouse-style hexagonal) pattern - that's
-over-engineering for entities like Product/Store that have no real business rules beyond basic
-validation. Conversely I wouldn't collapse Warehouse into a plain Panache entity either, because
-it genuinely has domain rules (location capacity, replace semantics) that benefit from being
-testable without a database. My rule of thumb: reach for the port/use-case split only when there
-is non-trivial business logic to isolate and unit-test; plain Panache active-record is fine for
-straightforward CRUD. What I would refactor is making that choice consistent and documented (e.g.
-a short ADR) so the next person doesn't reinvent a fourth style. I'd also unify the exception
-mapping - right now every resource redeclares its own `ErrorMapper`, which is duplicated JAX-RS
-`ExceptionMapper<Exception>` providers; that should be a single top-level provider.
+That is not automatically wrong. Product and Store are straightforward CRUD and do not
+need a heavy domain layer until they gain real business rules. Warehouse does need the
+extra boundary because creation, archive, and replacement include rules around active
+Business Unit Codes, location capacity, stock matching, and preserving history.
+Fulfilment sits in the middle: it is still small, but it already has quota rules across
+Warehouse, Product, and Store, so I would watch it closely. If those rules grow, I would
+extract a validator or use case before the resource becomes hard to maintain.
+
+The refactor I would do first is not a broad rewrite. I would document when to use each
+style, remove avoidable duplication in exception mapping, and keep persistence queries
+out of resources once they start representing business decisions rather than simple
+lookups. That gives the team consistency without turning a small assignment into an
+architecture exercise.
 ```
 ----
 2. When it comes to API spec and endpoints handlers, we have an Open API yaml file for the `Warehouse` API from which we generate code, but for the other endpoints - `Product` and `Store` - we just coded directly everything. What would be your thoughts about what are the pros and cons of each approach and what would be your choice?
 
 **Answer:**
 ```txt
-Spec-first (Warehouse): the YAML is the contract, so frontend/consumer teams can start against a
-mock or generated client before the backend is implemented, and the interface can't silently
-drift from what was published - the compiler enforces it. Cons: an extra generation step in the
-build (slower feedback loop while iterating), generated DTOs that don't map 1:1 to the domain
-model (I had to hand-map `com.warehouse.api.beans.Warehouse` to the domain `Warehouse`), and
-it's easy to end up fighting the generator on edge cases (nullable fields, custom validation).
+Spec-first is useful when the API contract is more important than local iteration speed.
+For Warehouse, the YAML makes sense because replacement, archive, and creation are core
+business operations. A published contract helps consumers understand paths, payloads,
+and response expectations, and generated code makes accidental drift easier to catch.
 
-Code-first (Product/Store): faster to iterate locally, one less moving part, JAX-RS annotations
-double as the documentation. Cons: no contract to review/version until someone bolts on
-swagger-generation from the annotations, and it's easier for the implementation to drift from
-whatever was verbally agreed with consumers.
+The downside is friction. Generated DTOs need mapping, schema changes require a
+generation step, and edge cases can be awkward when the generator's model does not match
+the application's domain model. For a small internal endpoint, that overhead can slow
+the team down more than it helps.
 
-My choice: spec-first for anything with external/cross-team consumers or a stable public
-contract (that's exactly the Warehouse case here), code-first for internal, fast-moving CRUD
-endpoints like Product/Store where the "consumer" is the same team shipping the backend. Given
-this is one small monolith, I'd probably standardize on generating an OpenAPI doc FROM the code
-(quarkus-smallrye-openapi) for Product/Store rather than hand-writing YAML for everything - that
-gets the contract-visibility benefit without the codegen friction, and reserve full spec-first
-codegen for endpoints that genuinely have external consumers.
+Code-first works well for Product and Store while they remain simple CRUD resources. The
+resource class is readable, changes are quick, and response handling is under direct
+control. The trade-off is that the contract is less explicit unless documentation is
+generated and reviewed.
+
+My choice would be spec-first for Warehouse and any external or cross-team workflow, and
+code-first for simple internal CRUD. I would still expose generated OpenAPI
+documentation for Product and Store so consumers can see the contract, but I would not
+force all endpoints through code generation unless the API governance need justifies it.
 ```
 ----
 3. Given the need to balance thorough testing with time and resource constraints, how would you prioritize and implement tests for this project? Which types of tests would you focus on, and how would you ensure test coverage remains effective over time?
 
 **Answer:**
 ```txt
-Priority order, highest value first:
+I would prioritize the tests that protect behavior with the least runtime cost.
 
-1. Unit tests on the domain/use-case layer (CreateWarehouseUseCase, ReplaceWarehouseUseCase,
-   ArchiveWarehouseUseCase, LocationGateway). These carry the actual business rules (uniqueness,
-   capacity, stock, replace semantics) and run in milliseconds with no container, so they're the
-   cheapest place to pin down edge cases and the first thing I'd run in CI.
-2. REST/integration tests (@QuarkusTest) per resource, covering the happy path plus each
-   documented validation rule end-to-end (400/404/409/201/204), using Dev Services so they run
-   against a real Postgres without extra setup. That's what I added for Warehouse and Fulfilment.
-3. A handful of true end-to-end smoke tests (@QuarkusIntegrationTest, like the existing
-   WarehouseEndpointIT) that exercise the packaged artifact - good for catching packaging/config
-   issues that unit and @QuarkusTest can miss, but slow, so kept to a minimum.
+First, Warehouse use-case tests should cover the core rules: unique active Business Unit
+Codes, valid locations, capacity limits, stock consistency, archive behavior, and
+replacement semantics. Those rules should be tested below HTTP so failures point to the
+business decision that broke.
 
-I would deliberately not chase line-coverage percentages - e.g. I'm not adding tests for trivial
-getters or the Panache boilerplate in ProductRepository. Coverage stays effective over time by:
-tying it to the pyramid above (push new business rules to use-case tests, not REST tests, so
-they run fast and fail with a precise message), treating a bug fix as incomplete without a
-regression test at the lowest layer that can reproduce it, and running `mvn test` in CI on every
-PR so drift is caught immediately rather than at release time.
+Second, REST/integration tests should cover the visible API behavior: happy paths,
+representative validation failures, expected status codes, JSON mapping, generated
+Warehouse endpoint wiring, and transaction-sensitive Store behavior. I would also cover
+Fulfilment at the resource level while it remains implemented directly in the resource,
+because that is where its quota checks currently live.
+
+Third, I would keep only a few full runtime smoke tests for packaging and configuration
+confidence. They are valuable, but slower, so they should exercise the main flows rather
+than duplicate all validation cases.
+
+I would not chase line coverage for its own sake. Coverage stays useful when each new
+business rule gets a focused test, each bug fix adds a regression test, and integration
+tests are used to prove wiring rather than every permutation of domain behavior.
 ```

@@ -80,7 +80,8 @@ public class FulfilmentResource {
         Fulfilment.<Fulfilment>list("storeId", request.storeId).stream()
             .map(f -> f.warehouseId)
             .collect(Collectors.toSet());
-    if (warehousesForStore.size() >= MAX_WAREHOUSES_PER_STORE) {
+    if (!warehousesForStore.contains(request.warehouseId)
+        && warehousesForStore.size() >= MAX_WAREHOUSES_PER_STORE) {
       throw new WebApplicationException(
           "Store " + request.storeId + " already has the maximum of " + MAX_WAREHOUSES_PER_STORE
               + " fulfilling warehouses.",
@@ -91,16 +92,22 @@ public class FulfilmentResource {
         Fulfilment.<Fulfilment>list("warehouseId", request.warehouseId).stream()
             .map(f -> f.productId)
             .collect(Collectors.toSet());
-    if (productsForWarehouse.size() >= MAX_PRODUCTS_PER_WAREHOUSE) {
+    if (!productsForWarehouse.contains(request.productId)
+        && productsForWarehouse.size() >= MAX_PRODUCTS_PER_WAREHOUSE) {
       throw new WebApplicationException(
           "Warehouse " + request.warehouseId + " already fulfils the maximum of "
               + MAX_PRODUCTS_PER_WAREHOUSE + " different products.",
           400);
     }
 
-    long warehousesForProductInStore =
-        Fulfilment.count("productId = ?1 and storeId = ?2", request.productId, request.storeId);
-    if (warehousesForProductInStore >= MAX_WAREHOUSES_PER_PRODUCT_AND_STORE) {
+    Set<Long> warehousesForProductInStore =
+        Fulfilment.<Fulfilment>list(
+                "productId = ?1 and storeId = ?2", request.productId, request.storeId)
+            .stream()
+            .map(f -> f.warehouseId)
+            .collect(Collectors.toSet());
+    if (!warehousesForProductInStore.contains(request.warehouseId)
+        && warehousesForProductInStore.size() >= MAX_WAREHOUSES_PER_PRODUCT_AND_STORE) {
       throw new WebApplicationException(
           "Product " + request.productId + " already has the maximum of "
               + MAX_WAREHOUSES_PER_PRODUCT_AND_STORE + " warehouses fulfilling store "

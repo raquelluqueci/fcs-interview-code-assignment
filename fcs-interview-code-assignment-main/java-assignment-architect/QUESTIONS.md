@@ -6,95 +6,90 @@ Here we have 3 questions related to the code base for you to answer. It is not a
 
 **Answer:**
 ```txt
-Yes. Today there are three coexisting styles: `Product`/`Store` as active-record Panache
-entities accessed directly from the REST resource, `Warehouse` behind a hexagonal port
-(`WarehouseStore`) implemented by `WarehouseRepository`, and now `FulfilmentAssociation`
-following the same hexagonal shape. I would consolidate everything onto the hexagonal
-style used by Warehouse/Fulfilment, for one concrete reason: business invariants (unique
-business unit code, location capacity, quotas) currently live in domain use cases that
-depend only on ports, which makes them unit-testable with a plain in-memory
-implementation and zero Quarkus/DB bootstrap - as shown by the `*UseCaseTest` classes in
-this PR, which run in milliseconds with no Dev Services. `ProductResource`/`StoreResource`
-mix persistence, validation and HTTP concerns in the same class; any rule added there
-(e.g. "product name must be unique across active products") could only be tested through
-a full `@QuarkusTest` with a running Postgres.
-That said, I would NOT force it for the sake of dogma: Product and Store, as they stand,
-have no business invariants beyond "exists" and "name is unique" (enforced by a DB
-constraint already). Introducing a port/use case layer there today would be
-over-engineering for the actual behavior present. The refactor becomes worth it the
-moment a real invariant shows up (as happened for Warehouse's capacity/location rules,
-and now Fulfilment's quotas) - i.e., let the domain complexity justify the pattern,
-not the other way around.
+Yes, but I would refactor by boundary and risk rather than forcing every endpoint into
+the same amount of architecture. This implementation intentionally uses a richer
+hexagonal shape for Warehouse and Fulfilment: REST adapters call use cases, use cases
+depend on ports, and validators enforce business invariants such as active business unit
+uniqueness, location capacity, replacement constraints, and fulfilment quotas.
+
+That shape is justified where rules matter. Warehouse replacement is not just a CRUD
+update; it archives one active unit, creates a successor with the same Business Unit
+Code, preserves history, and validates stock/capacity continuity. Fulfilment also has
+cross-entity constraints across Warehouse, Product, and Store. Those rules are easier to
+reason about when they live in domain services and use cases instead of being embedded
+inside JAX-RS handlers.
+
+I would not immediately move Product and Store into the same full structure. They are
+currently simpler CRUD resources, and adding ports/use cases only for symmetry would add
+noise. I would refactor them when they gain meaningful business behavior or when their
+side effects become more important. Store already has one such concern: synchronizing
+with a legacy system after the database transaction succeeds. That is correctly treated
+as a transactional side effect rather than ordinary persistence code.
+
+The main maintenance improvement I would make is to document this rule explicitly:
+simple CRUD can stay simple, but domain rules, replacement workflows, quotas, external
+side effects, and audit-sensitive behavior should live behind application/domain
+boundaries. I would also keep shared exception mapping and response translation in
+adapter-level components so each resource does not reinvent error handling.
 ```
 ----
 2. When it comes to API spec and endpoints handlers, we have an Open API yaml file for the `Warehouse` API from which we generate code, but for the other endpoints - `Product` and `Store` - we just coded directly everything. What would be your thoughts about what are the pros and cons of each approach and what would be your choice?
 
 **Answer:**
 ```txt
-Contract-first (OpenAPI -> generated interface, Warehouse's approach):
-+ The YAML is the single source of truth, reviewable independently of code, and can be
-  shared with API consumers/other teams before the implementation exists.
-+ The generated interface enforces the contract at compile time: if the implementation
-  drifts from the spec (wrong path, missing param), the build fails.
-+ Client SDKs / mocks can be generated from the same file.
-- Extra build step and generated sources add friction (as I hit in this exercise: the
-  generated `Warehouse` bean uses `String` for `capacity`/`stock` unless the schema states
-  `type: integer`, and the generator needs a full Maven cycle to regenerate after any
-  YAML change - slower inner loop than editing a hand-written class).
-- Anything the generator doesn't model well (custom status codes, fine-grained response
-  variants) needs vendor-specific escape hatches - I used RESTEasy Reactive's
-  `@ResponseStatus` to force 201 on creation since the generated interface's return type
-  is fixed to the DTO, not `Response`.
+Contract-first, as used by the Warehouse API, is strongest when the API is a product
+contract. The YAML can be reviewed independently, shared with consumers before the
+implementation is complete, used to generate clients or mocks, and versioned as an API
+artifact. The generated interface also makes drift visible during development: the
+handler has to implement the published shape.
 
-Code-first (Product/Store's approach):
-+ Faster to iterate - no generation step, the resource class IS the contract.
-+ Full control over response types/status codes without fighting a generator.
-- The contract only exists implicitly in the code; nothing prevents accidental breaking
-  changes, and there's no artifact to hand to a frontend/consumer team ahead of time.
-- Documentation (if any) has to be maintained by hand and tends to rot.
+The cost is operational friction. There is an extra generation step, generated DTOs may
+not match the domain model, and edge cases such as nullable fields, custom status codes,
+or domain-specific error shapes require deliberate mapping in the adapter layer. That is
+acceptable for Warehouse because Warehouse exposes the most important business workflow
+and includes replacement semantics that other systems are likely to care about.
 
-My choice: contract-first (OpenAPI) for every endpoint that is a stable, external-facing
-API consumed by other teams/services - which in this domain is arguably all of
-Warehouse, Product and Store, since they're all part of the same "Warehouse colocation
-management" public surface. I'd bring Product and Store under the same
-`quarkus-openapi-generator` pipeline as Warehouse for consistency, and reserve code-first
-only for truly internal, single-consumer endpoints where the iteration speed matters more
-than contract governance (e.g. an internal admin/debug endpoint).
+Code-first, as used by Product and Store, is faster and clearer for small internal CRUD
+surfaces. The JAX-RS resource directly shows the behavior, iteration is cheap, and there
+is less generated code to understand. The risk is that the contract becomes implicit. If
+another team consumes it, accidental path, payload, or status-code changes are harder to
+notice.
+
+My architectural preference is contract-first for stable or cross-team APIs, especially
+Warehouse and any future cost-control or fulfilment workflow consumed by other systems.
+For simple internal CRUD, I would accept code-first but still publish generated OpenAPI
+documentation from annotations so the contract remains visible. The important rule is not
+"YAML everywhere"; it is choosing the level of contract governance that matches consumer
+risk.
 ```
 ----
 3. Given the need to balance thorough testing with time and resource constraints, how would you prioritize and implement tests for this project? Which types of tests would you focus on, and how would you ensure test coverage remains effective over time?
 
 **Answer:**
 ```txt
-Priority order, highest ROI first:
+I would follow a test pyramid that mirrors the architecture.
 
-1. Domain unit tests (use cases + validators), no Quarkus/DB. This is where the actual
-   business risk lives - duplicate business unit codes, location capacity math,
-   replacement invariants, fulfilment quotas. They run in milliseconds, don't need Dev
-   Services/Postgres, and pinpoint the exact broken rule instead of a generic HTTP 400.
-   This is the bulk of what I wrote here (`CreateWarehouseUseCaseTest`,
-   `ReplaceWarehouseUseCaseTest`, `ArchiveWarehouseUseCaseTest`).
-2. REST/integration tests (`@QuarkusTest` + REST Assured) for the "wiring": correct HTTP
-   status codes, correct path/JSON mapping, exception-to-response translation. These
-   exist to catch integration mistakes (wrong `@Path`, wrong exception mapper priority,
-   wrong default status code) that unit tests structurally cannot see. I keep these
-   fewer and coarser than the unit tests - one or two happy-path tests plus one test per
-   distinct HTTP status a client can observe (400/404/201/204), not a cartesian product
-   of every validation rule again (that's already covered at the unit level).
-3. Contract/schema tests only where a generated OpenAPI client exists (Warehouse) -
-   validating the generated bean/interface actually match the YAML, catching accidental
-   drift between the two.
-4. I would deliberately NOT invest early in end-to-end/UI tests or performance tests -
-   there's no UI in this codebase and no evidence yet of a performance-sensitive path.
+First, domain/use-case tests should carry most of the business-rule coverage. Warehouse
+creation, archive, replacement, and Fulfilment association rules are the highest-risk
+areas because they protect capacity, stock continuity, active/archived state, and
+cross-entity quotas. These tests should exercise the use cases and validators through
+ports or test doubles, not through HTTP, so they stay fast and precise.
 
-To keep coverage effective over time rather than decorative:
-- Every new domain exception/validation rule requires a corresponding unit test in the
-  same PR - enforced by review, not tooling, at this project's size.
-- Prefer testing behavior through the public port/use case API, not implementation
-  details, so refactors (e.g. changing `WarehouseRepository`'s query strategy) don't
-  require touching the domain tests.
-- Track integration test count deliberately: it should grow O(1) per new use case (one
-  or two REST tests), while unit tests grow with the actual number of business rules.
-  If integration tests start growing faster than that, it is a sign that validation
-  logic is leaking into the REST layer again.
+Second, REST integration tests should cover adapter behavior: request/response mapping,
+HTTP status codes, exception mapping, generated Warehouse API integration, and
+transactional side effects such as Store legacy synchronization after commit. These
+tests should be fewer and broader than domain tests. They prove wiring; they should not
+repeat every business-rule permutation already covered at the use-case level.
+
+Third, I would keep a small smoke layer for packaged/runtime confidence. It should prove
+that the application starts with its generated sources and persistence configuration and
+that the most important flows can be exercised end to end. I would not prioritize UI
+tests because this code base has no UI, and I would only add performance tests when a
+measurable throughput or latency requirement exists.
+
+Coverage should remain effective through review rules rather than vanity metrics: every
+new business invariant needs a focused domain test, every externally visible status code
+needs at least one adapter test, and every production bug should add the lowest-level
+regression test that would have caught it. Line coverage is useful as a signal, but the
+real goal is protecting domain behavior and API contracts.
 ```

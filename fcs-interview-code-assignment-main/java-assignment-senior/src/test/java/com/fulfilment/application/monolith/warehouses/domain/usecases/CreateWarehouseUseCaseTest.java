@@ -85,6 +85,17 @@ public class CreateWarehouseUseCaseTest {
   }
 
   @Test
+  public void testCreateWithAggregateCapacityExceedingLocationMaxCapacityFails() {
+    location.maxNumberOfWarehouses = 2;
+    warehouseStore.warehouses.add(newWarehouse("MWH.100", "ZWOLLE-001", 25, 10));
+    Warehouse warehouse = newWarehouse("MWH.200", "ZWOLLE-001", 20, 5);
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class, () -> useCase.create(warehouse));
+    assertEquals(400, exception.getResponse().getStatus());
+  }
+
+  @Test
   public void testCreateWithStockExceedingCapacityFails() {
     Warehouse warehouse = newWarehouse("MWH.100", "ZWOLLE-001", 20, 21);
 
