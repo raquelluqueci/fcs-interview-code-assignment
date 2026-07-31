@@ -1,0 +1,70 @@
+# GitHub Pages publisher — renders the bilingual READMEs + live-stack screenshots
+# as a static site at https://raquelluqueci.github.io/fcs-interview-code-assignment/
+#
+# Author: tfantas — https://www.tfantas.io — Lisbon, July 2026
+
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble site sources
+        run: |
+          set -euo pipefail
+          mkdir -p _site/fcs-interview-code-assignment-main/docs
+          cp -R fcs-interview-code-assignment-main/docs/screenshots \
+                _site/fcs-interview-code-assignment-main/docs/screenshots
+          cp README.md _site/index.md
+          cp README-br.md _site/br.md
+          # Cross-link the rendered pages instead of the raw markdown files.
+          sed -i 's#(README-br\.md)#(br.html)#g' _site/index.md
+          sed -i 's#(README\.md)#(index.html)#g' _site/br.md
+          # Every other relative repo link points at the GitHub tree; only the
+          # screenshots ship with the site. http(s), anchors and .png stay as-is.
+          perl -pi -e 's{\]\((?!https?://)(?!#)([^)]+?)\)}{$1 =~ /\.(png|html)$/ ? "]($1)" : "](https://github.com/${{ github.repository }}/blob/main/$1)"}ge' \
+               _site/index.md _site/br.md
+
+      - name: Render HTML (pandoc)
+        run: |
+          set -euo pipefail
+          CSS=https://cdn.jsdelivr.net/npm/water.css@2/out/water.css
+          docker run --rm -v "$PWD/_site:/data" pandoc/core:3.2 \
+            --standalone --from gfm --to html5 \
+            --metadata title="FCS Warehouse Fulfilment — Case Study" \
+            --css "$CSS" --output index.html index.md
+          docker run --rm -v "$PWD/_site:/data" pandoc/core:3.2 \
+            --standalone --from gfm --to html5 \
+            --metadata title="FCS Warehouse Fulfilment — Case Study (PT-BR)" \
+            --css "$CSS" --output br.html br.md
+          rm _site/index.md _site/br.md
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
