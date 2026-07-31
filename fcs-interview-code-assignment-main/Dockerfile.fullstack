@@ -1,0 +1,35 @@
+# Multi-stage build for either assignment module.
+# Build context MUST be the repo root: both modules are children of the
+# aggregator POM (java-code-assignment-parent), so the parent pom.xml has
+# to be inside the context for `mvn -pl <module> -am` to resolve.
+#
+#   docker build -f Dockerfile.fullstack --build-arg MODULE=java-assignment-architect -t fcs-architect .
+#
+# Exit artifact: Quarkus fast-jar layout under /deployments, listening on :8080.
+
+FROM docker.io/library/maven:3.9-eclipse-temurin-17 AS build
+ARG MODULE
+WORKDIR /workspace
+
+# POMs first so dependency resolution is cached independently of source edits.
+COPY pom.xml ./
+COPY java-assignment-architect/pom.xml java-assignment-architect/
+COPY java-assignment-senior/pom.xml java-assignment-senior/
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -B -pl "${MODULE}" -am dependency:go-offline -DskipTests || true
+
+COPY java-assignment-architect java-assignment-architect
+COPY java-assignment-senior java-assignment-senior
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -B -pl "${MODULE}" -am package -DskipTests
+
+FROM docker.io/library/eclipse-temurin:17-jre
+ARG MODULE
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0"
+WORKDIR /deployments
+COPY --from=build /workspace/${MODULE}/target/quarkus-app/lib/ lib/
+COPY --from=build /workspace/${MODULE}/target/quarkus-app/*.jar ./
+COPY --from=build /workspace/${MODULE}/target/quarkus-app/app/ app/
+COPY --from=build /workspace/${MODULE}/target/quarkus-app/quarkus/ quarkus/
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar quarkus-run.jar"]

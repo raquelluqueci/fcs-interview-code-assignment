@@ -1,0 +1,18 @@
+# FCS Fulfilment — fragment for Prometheus scrape_config_files / host inject
+# Path B: Quarkus Micrometer at /q/metrics (primary RED + JVM)
+# Path A OTEL metrics are already scraped by host job "otelcol" on :8889
+
+- job_name: fcs-fulfilment
+  scrape_interval: 10s
+  scrape_timeout: 5s
+  metrics_path: /q/metrics
+  scheme: http
+  static_configs:
+    - targets:
+        - "127.0.0.1:8080"
+      labels:
+        project: fcs-interview
+        app: fulfilment-warehouse
+        service: fcs-fulfilment
+        env: local
+        signal: micrometer

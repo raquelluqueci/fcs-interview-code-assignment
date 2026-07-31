@@ -1,0 +1,43 @@
+# Recruiter-facing OTEL Collector (mirrors local otelcol-contrib role).
+# Local Odin runtime continues to use /usr/local/etc/otelcol-contrib.yaml.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: ""
+    send_timestamps: true
+    metric_expiration: 5m
+    resource_to_telemetry_conversion:
+      enabled: true
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
