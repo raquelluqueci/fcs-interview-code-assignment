@@ -8,6 +8,10 @@ import com.fulfilment.application.monolith.warehouses.domain.validation.Warehous
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 
+/**
+ * EN: Creates a warehouse after delegating rule checks to WarehouseValidator.
+ * PT: Cria um warehouse depois de delegar as regras de negocio ao WarehouseValidator.
+ */
 @ApplicationScoped
 public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
@@ -19,8 +23,14 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     this.warehouseValidator = warehouseValidator;
   }
 
+  /**
+   * EN: Validate then persist; validators throw domain/HTTP errors on breach.
+   * PT: Valida e depois persiste; os validators lancam erros de dominio/HTTP se houver violacao.
+   */
   @Override
   public void create(Warehouse warehouse) {
+    // EN: Keep orchestration thin — all policy lives in WarehouseValidator.
+    // PT: Orquestracao fina — toda a politica fica no WarehouseValidator.
     warehouseValidator.ensureBusinessUnitCodeIsUnique(warehouse.businessUnitCode);
 
     Location location = warehouseValidator.ensureValidLocation(warehouse.location);
@@ -31,7 +41,6 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     warehouse.createdAt = LocalDateTime.now();
     warehouse.archivedAt = null;
 
-    // if all went well, create the warehouse
     warehouseStore.create(warehouse);
   }
 }

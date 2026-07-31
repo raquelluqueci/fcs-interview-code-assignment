@@ -37,9 +37,10 @@ public class StoreResource {
   private static final Logger LOGGER = Logger.getLogger(StoreResource.class.getName());
 
   /**
-   * Ensures the given action only runs after the current transaction has committed
-   * successfully, so the legacy system never receives data that didn't actually make it
-   * into our database.
+   * EN: Runs action only after the current JTA transaction has committed successfully,
+   *     so the legacy system never receives uncommitted data.
+   * PT: Executa action so depois do commit JTA bem-sucedido, para o sistema legado
+   *     nunca receber dados que nao ficaram na nossa base.
    */
   private void runAfterCommit(Runnable action) {
     transactionSynchronizationRegistry.registerInterposedSynchronization(
@@ -49,6 +50,8 @@ public class StoreResource {
 
           @Override
           public void afterCompletion(int status) {
+            // EN: Ignore rollbacks — legacy sync must mirror durable state only.
+            // PT: Ignorar rollbacks — a sync legada so reflecte estado duravel.
             if (status == Status.STATUS_COMMITTED) {
               action.run();
             }

@@ -13,15 +13,16 @@ WORKDIR /workspace
 
 # POMs first so dependency resolution is cached independently of source edits.
 COPY pom.xml ./
+COPY settings-central.xml ./
 COPY java-assignment-architect/pom.xml java-assignment-architect/
 COPY java-assignment-senior/pom.xml java-assignment-senior/
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -B -pl "${MODULE}" -am dependency:go-offline -DskipTests || true
+    mvn -s settings-central.xml -q -B -pl "${MODULE}" -am dependency:go-offline -DskipTests
 
 COPY java-assignment-architect java-assignment-architect
 COPY java-assignment-senior java-assignment-senior
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -B -pl "${MODULE}" -am package -DskipTests
+    mvn -s settings-central.xml -q -B -pl "${MODULE}" -am package -DskipTests
 
 FROM docker.io/library/eclipse-temurin:17-jre
 ARG MODULE

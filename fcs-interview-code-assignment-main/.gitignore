@@ -1,100 +1,223 @@
-# Dependencies
-node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-.pnpm-debug.log
+# =============================================================================
+# .gitignore — FCS interview submission
+# EN: Keep the repo reviewer-clean (no AI tool state, no build outputs, no logs).
+# PT: Manter o repo limpo para avaliacao (sem estado de ferramentas de IA, builds ou logs).
+#
+# EN: Demo passwords in application.properties MAY be committed (evaluation project).
+# PT: Senhas de demo em application.properties PODEM ir no git (projeto de avaliacao).
+# =============================================================================
 
-# Build outputs
-dist/
-build/
-out/
-.next/
-*.tsbuildinfo
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# OMC / agent state
+# -----------------------------------------------------------------------------
+# AI / LLM / agent tooling state  |  Estado de ferramentas de IA / agentes
+# -----------------------------------------------------------------------------
 .omc/
-
-# Observability runtime volumes (compose)
-observability/.data/
-observability/evidence/
-
-# Local agent/run state
+.omx/
+.claude/
+.claude-mem/
+.cursor/
+.codex/
+.continue/
+.aider*
+.grok/
+.gemini/
+.windsurf/
+.tabnine/
+.specstory/
+.anthropic/
+.openai/
+.opencode/
+.crush/
+.vibe/
 .remember/
+.agent/
+.agents/
+.copilot/
+.github/copilot-instructions.local.md
+.llm/
+.langchain/
+.langsmith/
+.auto-memory/
+.factory/
+.kilocode/
+.roo/
+.trae/
+.zed/
+.augment/
+.void/
+.cline/
+.pearai/
+.piece/
+.repomix/
+.serena/
+.swarm/
+.ultrawork/
+.ralph/
+.ralplan/
+**/.omc/**
+**/.claude/**
+**/.cursor/**
+**/.codex/**
+**/.grok/**
+**/.continue/**
+**/.remember/**
+**/.allen-key/**
+**/*-transcript*
+**/*agent-transcript*
+**/.stop-transcript*
+*.session.json
+*.chat.json
+.allen-key/
+allen-key.local.*
 
-# Testing
+# -----------------------------------------------------------------------------
+# Build outputs  |  Saidas de build
+# -----------------------------------------------------------------------------
+**/target/
+target/
+**/build/
+build/
+**/out/
+out/
+**/dist/
+dist/
+**/bin/
+**/.next/
+**/.nuxt/
+**/.svelte-kit/
+**/coverage/
 coverage/
+**/htmlcov/
+**/.nyc_output/
+**/*.tsbuildinfo
+**/*.class
+*.class
+**/*.jar
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+**/*.war
+**/*.ear
+**/*.nar
+**/*.zip
+**/*.tar.gz
+**/*.rar
+**/.quarkus/
+**/quarkus.log
+**/quarkus-app/
 
-# IDE specific files
+# -----------------------------------------------------------------------------
+# Dependencies  |  Dependencias
+# -----------------------------------------------------------------------------
+**/node_modules/
+node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*
+**/.npm/
+**/.yarn/cache
+**/.yarn/unplugged
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+**/bower_components/
+**/vendor/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.tox/
+**/.nox/
+**/.gradle/
+**/.mvn/timing.properties
+**/dependency-reduced-pom.xml
+**/mvn-settings-local.xml
+mvn-settings-local.xml
+**/pom.xml.tag
+**/pom.xml.releaseBackup
+**/pom.xml.versionsBackup
+**/release.properties
+release.properties
+
+# -----------------------------------------------------------------------------
+# Logs and temp  |  Logs e temporarios
+# -----------------------------------------------------------------------------
+**/logs/
+logs/
+**/*.log
+*.log
+**/*.log.*
+**/tmp/
+**/temp/
+**/*.tmp
+**/*.temp
+**/*.bak
+**/*.bak-*
+**/*.orig
+**/*.rej
+**/*~
+**/*.swp
+**/*.swo
+**/.hs_err_pid*
+**/replay_pid*
+**/core.*
+
+# -----------------------------------------------------------------------------
+# Local env overrides  |  Overrides de ambiente local
+# .env.example stays tracked  |  .env.example permanece versionado
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# -----------------------------------------------------------------------------
+# IDE / editors
+# -----------------------------------------------------------------------------
 .idea/
-.vscode/*
+**/*.iml
+**/*.ipr
+**/*.iws
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
-# OS specific files
-.DS_Store
-Thumbs.db
-
-# Debug logs
-logs/
-*.log
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# dotenv environment variable files
-.env.*
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# Eclipse
+*.code-workspace
 .project
 .classpath
 .settings/
-bin/
-
-# NetBeans
+.factorypath
+.apt_generated/
+.nb-gradle/
 nb-configuration.xml
+*.sublime-project
+*.sublime-workspace
+.history/
 
-# Visual Studio Code
-.vscode
+# -----------------------------------------------------------------------------
+# OS junk  |  Lixo do SO
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Vim
-*.swp
-*.swo
+# -----------------------------------------------------------------------------
+# Observability local-only  |  Observabilidade so local
+# -----------------------------------------------------------------------------
+observability/.data/
+observability/evidence/
+**/docker-data/
+**/*.pid
+scripts/install-local-odin.sh
 
-# patch
-*.orig
-*.rej
-
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-release.properties
-# allen-key.sh runtime-generated configs
-.allen-key/
+# Patch leftovers
+*.patch
+*.diff
+.patches/

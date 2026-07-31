@@ -7,7 +7,8 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 
 /**
- * Emits OpenTelemetry domain HTTP counters for every JAX-RS response.
+ * EN: JAX-RS response filter that emits OpenTelemetry counters for every request.
+ * PT: Filtro JAX-RS de resposta que emite contadores OpenTelemetry em cada pedido.
  */
 @Provider
 public class FcsOtelHttpFilter implements ContainerResponseFilter {
@@ -15,11 +16,14 @@ public class FcsOtelHttpFilter implements ContainerResponseFilter {
     @Inject
     FcsOtelMetrics metrics;
 
+    /**
+     * EN: After the response is built, record HTTP + coarse domain metrics.
+     * PT: Depois da resposta construida, regista metricas HTTP e de dominio.
+     */
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         String method = request.getMethod();
-        // Prefer matched JAX-RS template (low cardinality) over raw getPath() with IDs
-        String route = templateRoute(request);
+        String route = normalizedRoute(request);
         metrics.recordHttp(method, route, response.getStatus());
 
         String lower = route.toLowerCase();
@@ -34,23 +38,42 @@ public class FcsOtelHttpFilter implements ContainerResponseFilter {
         }
     }
 
-    private static String templateRoute(ContainerRequestContext request) {
+    /**
+     * EN: Prefer matched JAX-RS templates; fall back to path with IDs stripped.
+     *     Keeps Prometheus/OTEL label cardinality under control.
+     * PT: Prefere templates JAX-RS matched; senao usa o path sem IDs.
+     *     Controla a cardinalidade das labels no Prometheus/OTEL.
+     */
+    static String normalizedRoute(ContainerRequestContext request) {
         if (request.getUriInfo() == null) {
             return "unknown";
         }
         var matched = request.getUriInfo().getMatchedURIs();
         if (matched != null && !matched.isEmpty()) {
-            // First matched URI is the most specific template path when available
             String m = matched.get(0);
             if (m != null && !m.isBlank()) {
-                return m.startsWith("/") ? m : "/" + m;
+                return resourceRoute(m);
             }
         }
         String path = request.getUriInfo().getPath();
         if (path == null || path.isBlank()) {
             return "root";
         }
-        // Strip numeric path segments to avoid high-cardinality labels
-        return path.replaceAll("/\\d+", "/{id}");
+        return resourceRoute(path);
+    }
+
+    /**
+     * EN: Collapse any path to the first resource segment only (e.g. /warehouse/{id} -&gt; /warehouse).
+     * PT: Reduz o path ao primeiro segmento de recurso (ex.: /warehouse/{id} -&gt; /warehouse).
+     */
+    private static String resourceRoute(String path) {
+        String normalized = path.startsWith("/") ? path : "/" + path;
+        String[] segments = normalized.split("/");
+        if (segments.length < 2 || segments[1].isBlank()) {
+            return "/";
+        }
+        // EN: Entity IDs / business-unit codes must never become metric labels.
+        // PT: IDs de entidade / business-unit codes nunca podem ser labels de metrica.
+        return "/" + segments[1].toLowerCase();
     }
 }

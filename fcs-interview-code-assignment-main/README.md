@@ -71,9 +71,9 @@ make run-senior
 # make run-architect
 ```
 
-App: `http://127.0.0.1:8080`  
-Health: `http://127.0.0.1:8080/q/health`  
-Metrics (Micrometer): `http://127.0.0.1:8080/q/metrics`
+- App: `http://127.0.0.1:8080`
+- Health: `http://127.0.0.1:8080/q/health`
+- Metrics (Micrometer): `http://127.0.0.1:8080/q/metrics`
 
 ### Prometheus — queries that show data
 
@@ -103,7 +103,7 @@ fcs_http_server_requests_total{service_name=~"warehouse-fulfilment.*"}
 sum by (fcs_route) (rate(fcs_http_server_requests_total{service_name=~"warehouse-fulfilment.*"}[1m]))
 ```
 
-Deep-link with query pre-filled:  
+Deep-link with query pre-filled:
 [http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0](http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0)
 
 Direct API checks:
@@ -115,7 +115,7 @@ wget -qO- http://127.0.0.1:8889/metrics | grep fcs_
 
 ### Grafana
 
-Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)  
+Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)
 JSON source: [`observability/grafana/dashboards/fcs-fulfilment-obs.json`](observability/grafana/dashboards/fcs-fulfilment-obs.json)
 
 ## Recruiter path (Docker Compose)
@@ -155,7 +155,7 @@ scripts/
 ```bash
 export JAVA_HOME=…/openjdk@17…
 mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-senior/pom.xml test
-mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
+mvn -s java-assignment-architect/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
 ```
 
 Integration tests that need Dev Services require Docker. Unit tests (use cases, location) do not.

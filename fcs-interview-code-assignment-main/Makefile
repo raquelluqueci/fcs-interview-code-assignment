@@ -3,6 +3,7 @@ SHELL := /bin/bash
 
 MODULE ?= java-assignment-senior
 COMPOSE := docker compose -f docker-compose.observability.yml
+MAVEN := mvn -s settings-central.xml
 
 .PHONY: help obs-up obs-down obs-ps test-senior test-architect test-all \
 	run-senior run-architect odin-install odin-uninstall metrics-smoke
@@ -25,13 +26,13 @@ obs-ps:
 	$(COMPOSE) ps
 
 test-senior:
-	./java-assignment-senior/mvnw -f java-assignment-senior/pom.xml clean test
+	$(MAVEN) -f java-assignment-senior/pom.xml clean test
 
 test-architect:
-	./java-assignment-architect/mvnw -f java-assignment-architect/pom.xml clean test
+	$(MAVEN) -f java-assignment-architect/pom.xml clean test
 
 test-all:
-	mvn -f pom.xml clean test
+	$(MAVEN) -f pom.xml clean verify
 
 # Override Claude/Codex shell OTEL_* with gRPC → local otelcol :4317
 OTEL_RUN := env \
@@ -47,12 +48,12 @@ OTEL_RUN := env \
 
 run-senior:
 	set -a; [ -f .env ] && . ./.env; set +a; \
-	$(OTEL_RUN) mvn -s java-assignment-senior/mvn-settings-local.xml \
+	$(OTEL_RUN) $(MAVEN) \
 		-f java-assignment-senior/pom.xml quarkus:dev
 
 run-architect:
 	set -a; [ -f .env ] && . ./.env; set +a; \
-	$(OTEL_RUN) mvn -s java-assignment-architect/mvn-settings-local.xml \
+	$(OTEL_RUN) $(MAVEN) \
 		-f java-assignment-architect/pom.xml quarkus:dev
 
 odin-install:
