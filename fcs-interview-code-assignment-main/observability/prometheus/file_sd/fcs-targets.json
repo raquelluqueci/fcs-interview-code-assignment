@@ -1,0 +1,11 @@
+[
+  {
+    "targets": ["127.0.0.1:8080"],
+    "labels": {
+      "project": "fcs-interview",
+      "app": "fulfilment-warehouse",
+      "service": "fcs-fulfilment",
+      "env": "local"
+    }
+  }
+]

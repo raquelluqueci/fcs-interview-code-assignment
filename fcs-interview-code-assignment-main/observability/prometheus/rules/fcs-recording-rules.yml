@@ -1,0 +1,67 @@
+groups:
+  - name: fcs-fulfilment.http
+    interval: 15s
+    rules:
+      # Always-visible availability series (Graph UI: job:fcs_up)
+      - record: job:fcs_up
+        expr: |
+          max(up{job=~"fcs-fulfilment.*"}) or vector(0)
+
+      - record: job:fcs_http_requests:rate5m_total
+        expr: |
+          sum by (job, instance) (
+            rate(http_server_requests_seconds_count{job=~"fcs-fulfilment.*"}[5m])
+          )
+
+      # OTEL counters re-exported by otelcol (:8889) — service_name from resource attrs
+      - record: job:fcs_otel_http:rate5m
+        expr: |
+          sum by (fcs_route, http_status_code) (
+            rate(fcs_http_server_requests_total{service_name=~"warehouse-fulfilment.*"}[5m])
+          )
+
+      - record: job:fcs_otel_domain_ops:rate5m
+        expr: |
+          sum by (fcs_operation) (
+            rate(fcs_domain_operations_total{service_name=~"warehouse-fulfilment.*"}[5m])
+          )
+
+
+      - record: job:fcs_http_errors:rate5m
+        expr: |
+          sum by (job, instance) (
+            rate(http_server_requests_seconds_count{job=~"fcs-fulfilment.*",status=~"5.."}[5m])
+          )
+
+      - record: job:fcs_http_error_ratio:rate5m
+        expr: |
+          (
+            sum by (job, instance) (
+              rate(http_server_requests_seconds_count{job=~"fcs-fulfilment.*",status=~"5.."}[5m])
+            )
+          )
+          /
+          clamp_min(
+            sum by (job, instance) (
+              rate(http_server_requests_seconds_count{job=~"fcs-fulfilment.*"}[5m])
+            ),
+            1e-9
+          )
+
+      - record: job:fcs_http_request_duration_seconds:p95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (job, instance, le) (
+              rate(http_server_requests_seconds_bucket{job=~"fcs-fulfilment.*"}[5m])
+            )
+          )
+
+  - name: fcs-fulfilment.runtime
+    interval: 30s
+    rules:
+      - record: job:fcs_jvm_memory_used_bytes:sum
+        expr: |
+          sum by (job, instance, area) (
+            jvm_memory_used_bytes{job=~"fcs-fulfilment.*"}
+          )

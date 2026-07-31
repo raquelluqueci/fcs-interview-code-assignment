@@ -19,6 +19,16 @@ out/
 .env.test.local
 .env.production.local
 
+# OMC / agent state
+.omc/
+
+# Observability runtime volumes (compose)
+observability/.data/
+observability/evidence/
+
+# Local agent/run state
+.remember/
+
 # Testing
 coverage/
 
@@ -86,3 +96,5 @@ pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
+# allen-key.sh runtime-generated configs
+.allen-key/
