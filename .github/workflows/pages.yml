@@ -43,7 +43,7 @@ jobs:
           sed -i 's#(README\.md)#(index.html)#g' _site/br.md
           # Every other relative repo link points at the GitHub tree; only the
           # screenshots ship with the site. http(s), anchors and .png stay as-is.
-          perl -pi -e 's{\]\((?!https?://)(?!#)([^)]+?)\)}{$1 =~ /\.(png|html)$/ ? "]($1)" : "](https://github.com/$ENV{REPO}/blob/main/$1)"}ge' \
+          perl -pi -e 's{\]\((?!https?://)(?!#)([^)]+?)\)}{my $t = $1; $t =~ /\.(?:png|html)$/ ? "]($t)" : "](https://github.com/$ENV{REPO}/blob/main/$t)"}ge' \
                _site/index.md _site/br.md
 
       - name: Render HTML (pandoc)
