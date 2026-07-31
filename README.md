@@ -165,7 +165,7 @@ The two completed variants are aggregated by a
 (`com.inventorix:java-code-assignment-parent`), so a single reactor build validates both:
 
 ```sh
-JAVA_HOME=/usr/local/opt/openjdk@17 mvn -s /Users/odin/.m2/settings-central.xml \
+JAVA_HOME=/path/to/jdk-17 mvn -s fcs-interview-code-assignment-main/settings-central.xml \
   -f fcs-interview-code-assignment-main/pom.xml clean test
 ```
 
@@ -173,12 +173,12 @@ Each module also builds standalone (`java-assignment`, the untouched original, s
 reactor on purpose). Using `mvn -f <pom.xml>` works from the repository root:
 
 ```sh
-JAVA_HOME=/usr/local/opt/openjdk@17 mvn -s /Users/odin/.m2/settings-central.xml \
+JAVA_HOME=/path/to/jdk-17 mvn -s fcs-interview-code-assignment-main/settings-central.xml \
   -f fcs-interview-code-assignment-main/java-assignment-architect/pom.xml test
 ```
 
 ```sh
-JAVA_HOME=/usr/local/opt/openjdk@17 mvn -s /Users/odin/.m2/settings-central.xml \
+JAVA_HOME=/path/to/jdk-17 mvn -s fcs-interview-code-assignment-main/settings-central.xml \
   -f fcs-interview-code-assignment-main/java-assignment-senior/pom.xml test
 ```
 

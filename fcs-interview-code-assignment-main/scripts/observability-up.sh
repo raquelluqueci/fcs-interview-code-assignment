@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start recruiter compose stack (fail-closed on port clash with Odin native stack).
+# Start the self-contained observability stack (fail closed on port clashes).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -20,7 +20,7 @@ echo "==> Preflight ports (fail-closed if busy)"
 busy=0
 for p in "${REQUIRED_PORTS[@]}"; do
   if port_in_use "$p"; then
-    echo "BLOCK: port $p already listening — use native Odin stack (make odin-install) or free the port"
+    echo "BLOCK: port $p is already listening; free it before starting the stack"
     busy=1
   fi
 done

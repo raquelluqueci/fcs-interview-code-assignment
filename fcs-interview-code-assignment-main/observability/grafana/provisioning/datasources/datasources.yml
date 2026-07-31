@@ -1,5 +1,5 @@
 # Compose path: Prometheus service name + uid for dashboards.
-# Local Odin already has Prometheus at http://localhost:9090/prometheus (uid ef9a4xfon3toge).
+# The provisioned datasource points to Prometheus inside the compose network.
 apiVersion: 1
 
 datasources:

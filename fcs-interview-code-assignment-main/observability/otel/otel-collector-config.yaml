@@ -1,5 +1,5 @@
 # Recruiter-facing OTEL Collector (mirrors local otelcol-contrib role).
-# Local Odin runtime continues to use /usr/local/etc/otelcol-contrib.yaml.
+# This file is used by the self-contained local stack.
 receivers:
   otlp:
     protocols:
