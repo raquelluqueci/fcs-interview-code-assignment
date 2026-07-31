@@ -222,3 +222,6 @@ observability/nginx/
 *.patch
 *.diff
 .patches/
+
+# Local analysis reports (never publish)
+/ANALISE_ADICIONAL_CASE_STUDY_LOCAL.md
