@@ -211,10 +211,10 @@ run_app() { # name image_or_module db_name host_port
       "${common_env[@]}" \
       -v "${REPO_ROOT}:/workspace" \
       -v fcs-m2-dev:/root/.m2 \
-      -w /workspace \
+      -w "/workspace/$2" \
       -p "127.0.0.1:$4:8080" \
       docker.io/library/maven:3.9-eclipse-temurin-17 \
-      mvn -q -B -pl "$2" -am quarkus:dev -DskipTests \
+      mvn -q -B quarkus:dev -DskipTests \
         -Dquarkus.http.host=0.0.0.0 -Dquarkus.analytics.disabled=true >/dev/null
   fi
 }
