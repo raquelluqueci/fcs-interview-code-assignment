@@ -50,7 +50,7 @@
     {
       "title": "Prometheus UI",
       "type": "link",
-      "url": "http://localhost/prometheus",
+      "url": "http://localhost:9090",
       "targetBlank": true,
       "icon": "external link",
       "asDropdown": false,
@@ -62,14 +62,14 @@
     {
       "title": "Services Dashboard",
       "type": "link",
-      "url": "http://localhost/",
+      "url": "http://localhost:3001",
       "targetBlank": true,
       "icon": "external link",
       "asDropdown": false,
       "includeVars": false,
       "keepTime": false,
       "tags": [],
-      "tooltip": "Nginx gateway"
+      "tooltip": "Local Grafana"
     }
   ],
   "templating": {
@@ -81,7 +81,7 @@
         "current": {
           "selected": true,
           "text": "Prometheus",
-          "value": "ef9a4xfon3toge"
+          "value": "Prometheus"
         },
         "hide": 0,
         "includeAll": false,

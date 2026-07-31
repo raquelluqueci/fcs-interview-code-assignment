@@ -71,8 +71,8 @@ The script prints random loopback ports for both modules. Each exposes `/q/swagg
 
 Open the Graph UI (not the empty “No data queried yet” placeholder):
 
-- UI: [http://localhost/prometheus/graph](http://localhost/prometheus/graph)
-- Targets: [http://localhost/prometheus/targets](http://localhost/prometheus/targets) → job **`fcs-fulfilment`** must be **UP**
+- UI: [http://localhost:9090/graph](http://localhost:9090/graph)
+- Targets: [http://localhost:9090/targets](http://localhost:9090/targets) → job **`fcs-fulfilment`** must be **UP**
 
 Paste any of these expressions:
 
@@ -96,18 +96,18 @@ sum by (fcs_route) (rate(fcs_http_server_requests_total{service_name=~"warehouse
 ```
 
 Deep-link with query pre-filled:
-[http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0](http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0)
+[http://localhost:9090/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0](http://localhost:9090/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0)
 
 Direct API checks:
 
 ```bash
-wget -qO- 'http://127.0.0.1:9090/prometheus/api/v1/query?query=up{job="fcs-fulfilment"}'
+wget -qO- 'http://127.0.0.1:9090/api/v1/query?query=up{job="fcs-fulfilment"}'
 wget -qO- http://127.0.0.1:8889/metrics | grep fcs_
 ```
 
 ### Grafana
 
-Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)
+Dashboard: [http://localhost:3001/d/fcs-fulfilment-obs/](http://localhost:3001/d/fcs-fulfilment-obs/)
 JSON source: [`observability/grafana/dashboards/fcs-fulfilment-obs.json`](observability/grafana/dashboards/fcs-fulfilment-obs.json)
 
 ## Docker Compose observability stack

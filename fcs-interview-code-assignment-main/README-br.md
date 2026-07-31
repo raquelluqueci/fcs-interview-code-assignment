@@ -70,8 +70,8 @@ O script imprime portas aleatórias em loopback para os dois módulos. Cada mód
 
 A aba Graph começa com **“No data queried yet”** até colares uma query. Isso é normal.
 
-- Graph: [http://localhost/prometheus/graph](http://localhost/prometheus/graph)
-- Targets: [http://localhost/prometheus/targets](http://localhost/prometheus/targets) → **`fcs-fulfilment` = UP**
+- Graph: [http://localhost:9090/graph](http://localhost:9090/graph)
+- Targets: [http://localhost:9090/targets](http://localhost:9090/targets) → **`fcs-fulfilment` = UP**
 
 Queries:
 
@@ -90,16 +90,16 @@ sum by (fcs_route) (rate(fcs_http_server_requests_total{service_name=~"warehouse
 ```
 
 Link com query pronta:  
-[http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0](http://localhost/prometheus/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0)
+[http://localhost:9090/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0](http://localhost:9090/graph?g0.expr=up%7Bjob%3D%22fcs-fulfilment%22%7D&g0.tab=0)
 
 ```bash
-wget -qO- 'http://127.0.0.1:9090/prometheus/api/v1/query?query=up{job="fcs-fulfilment"}'
+wget -qO- 'http://127.0.0.1:9090/api/v1/query?query=up{job="fcs-fulfilment"}'
 wget -qO- http://127.0.0.1:8889/metrics | grep fcs_
 ```
 
 ### Grafana
 
-Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)  
+Dashboard: [http://localhost:3001/d/fcs-fulfilment-obs/](http://localhost:3001/d/fcs-fulfilment-obs/)
 JSON: [`observability/grafana/dashboards/fcs-fulfilment-obs.json`](observability/grafana/dashboards/fcs-fulfilment-obs.json)
 
 ## Stack de observabilidade com Docker Compose
