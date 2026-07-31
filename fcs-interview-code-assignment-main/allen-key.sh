@@ -207,26 +207,21 @@ run_app() { # name image_or_module db_name host_port
   else
     # quarkus:dev inside a Maven container: Dev UI only exists in dev mode.
     # Source is bind-mounted; a named volume keeps the Maven repo warm.
+    # Heap caps keep two dev-mode JVMs inside small podman-machine VMs (2 GiB).
     "${ENGINE}" run -d --name "$1" --network "${NETWORK}" \
       "${common_env[@]}" \
+      -e MAVEN_OPTS="-Xmx384m" \
       -v "${REPO_ROOT}:/workspace" \
       -v fcs-m2-dev:/root/.m2 \
       -w "/workspace/$2" \
       -p "127.0.0.1:$4:8080" \
       docker.io/library/maven:3.9-eclipse-temurin-17 \
-      mvn -q -B quarkus:dev -DskipTests \
+      mvn -s /workspace/settings-central.xml -q -B quarkus:dev -DskipTests \
+        -Djvm.args="-Xmx384m" \
         -Dquarkus.http.host=0.0.0.0 -Dquarkus.analytics.disabled=true >/dev/null
   fi
 }
-if [[ "${MODE}" == "prod" ]]; then
-  run_app fcs-app-architect fcs-architect:allen quarkus_architect "${PORT_ARCHITECT}"
-  run_app fcs-app-senior    fcs-senior:allen    quarkus_senior    "${PORT_SENIOR}"
-else
-  run_app fcs-app-architect java-assignment-architect quarkus_architect "${PORT_ARCHITECT}"
-  run_app fcs-app-senior    java-assignment-senior    quarkus_senior    "${PORT_SENIOR}"
-fi
-
-# dev mode compiles on first request path; cold ~/.m2 can take several minutes
+# dev mode compiles on startup; cold ~/.m2 can take several minutes
 WAIT_TRIES=60
 [[ "${MODE}" == "dev" ]] && WAIT_TRIES=600
 wait_http() { # host_port label
@@ -240,8 +235,19 @@ wait_http() { # host_port label
   done
   echo "[allen-key]   WARNING: $2 not reachable on :$1 after ${WAIT_TRIES}s (check logs below)" >&2
 }
-wait_http "${PORT_ARCHITECT}" "architect"
-wait_http "${PORT_SENIOR}" "senior"
+
+if [[ "${MODE}" == "prod" ]]; then
+  run_app fcs-app-architect fcs-architect:allen quarkus_architect "${PORT_ARCHITECT}"
+  run_app fcs-app-senior    fcs-senior:allen    quarkus_senior    "${PORT_SENIOR}"
+  wait_http "${PORT_ARCHITECT}" "architect"
+  wait_http "${PORT_SENIOR}" "senior"
+else
+  # Sequential on purpose: two dev-mode compiles at once OOM a 2 GiB VM.
+  run_app fcs-app-architect java-assignment-architect quarkus_architect "${PORT_ARCHITECT}"
+  wait_http "${PORT_ARCHITECT}" "architect"
+  run_app fcs-app-senior java-assignment-senior quarkus_senior "${PORT_SENIOR}"
+  wait_http "${PORT_SENIOR}" "senior"
+fi
 
 # ---------------------------------------------------------------- summary ---
 UI_HINT="/q/swagger-ui (prod build; Dev UI needs --dev)"

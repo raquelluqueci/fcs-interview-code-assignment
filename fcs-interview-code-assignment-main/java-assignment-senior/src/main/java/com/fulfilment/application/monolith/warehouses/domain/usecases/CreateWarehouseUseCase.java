@@ -9,6 +9,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
 
+/**
+ * EN: Creates a warehouse after validating business-unit uniqueness, location
+ *     feasibility, capacity and stock constraints from the case study.
+ * PT: Cria um warehouse apos validar unicidade do business-unit, viabilidade
+ *     da localizacao, capacidade e stock conforme o case study.
+ */
 @ApplicationScoped
 public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
@@ -20,12 +26,18 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     this.locationResolver = locationResolver;
   }
 
+  /**
+   * EN: Persist a new warehouse or throw WebApplicationException with 400 on rule breach.
+   * PT: Persiste um novo warehouse ou lanca WebApplicationException 400 se violar regras.
+   */
   @Override
   public void create(Warehouse warehouse) {
     if (warehouse.businessUnitCode == null || warehouse.businessUnitCode.isBlank()) {
       throw new WebApplicationException("Warehouse business unit code is required.", 400);
     }
 
+    // EN: Business unit codes are unique in this model.
+    // PT: Os business unit codes sao unicos neste modelo.
     if (warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode) != null) {
       throw new WebApplicationException(
           "A warehouse with business unit code " + warehouse.businessUnitCode + " already exists.", 400);

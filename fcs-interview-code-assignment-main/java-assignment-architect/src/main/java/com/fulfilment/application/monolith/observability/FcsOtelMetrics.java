@@ -11,8 +11,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Domain-level OpenTelemetry metrics + span enrichment.
- * Exported via OTLP to the local collector (otelcol → Prometheus :8889).
+ * EN: Domain-level OpenTelemetry metrics and span enrichment.
+ *     Exported via OTLP (gRPC) to the collector, then scraped by Prometheus on :8889.
+ * PT: Metricas OpenTelemetry de dominio e enriquecimento de spans.
+ *     Exportadas via OTLP (gRPC) para o collector e depois scraped pelo Prometheus em :8889.
  */
 @ApplicationScoped
 public class FcsOtelMetrics {
@@ -25,6 +27,10 @@ public class FcsOtelMetrics {
     private final LongCounter domainOperations;
     private final LongCounter httpRequests;
 
+    /**
+     * EN: Builds OTEL meters bound to the global OpenTelemetry instance injected by Quarkus.
+     * PT: Constroi meters OTEL ligados a instancia OpenTelemetry global injectada pelo Quarkus.
+     */
     @Inject
     public FcsOtelMetrics(OpenTelemetry openTelemetry) {
         Meter meter = openTelemetry.getMeter("fcs-fulfilment");
@@ -40,6 +46,14 @@ public class FcsOtelMetrics {
                 .build();
     }
 
+    /**
+     * EN: Increments the coarse domain counter (warehouse|store|product|fulfilment)
+     *     and attaches the same label to the current span when one is active.
+     * PT: Incrementa o contador de dominio (warehouse|store|product|fulfilment)
+     *     e grava o mesmo label no span actual, se existir.
+     *
+     * @param operation domain bucket name / nome do bucket de dominio
+     */
     public void recordDomainOperation(String operation) {
         domainOperations.add(1, Attributes.of(OP, operation));
         Span span = Span.current();
@@ -48,6 +62,12 @@ public class FcsOtelMetrics {
         }
     }
 
+    /**
+     * EN: Records one HTTP observation (method, low-cardinality route, status).
+     *     Marks the active span as ERROR when status &gt;= 500.
+     * PT: Regista uma observacao HTTP (metodo, rota de baixa cardinalidade, status).
+     *     Marca o span activo como ERROR quando status &gt;= 500.
+     */
     public void recordHttp(String method, String route, int status) {
         httpRequests.add(1, Attributes.of(
                 METHOD, method == null ? "UNKNOWN" : method,

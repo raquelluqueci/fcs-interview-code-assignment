@@ -136,7 +136,7 @@ scripts/
 ```bash
 export JAVA_HOME=…/openjdk@17…
 mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-senior/pom.xml test
-mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
+mvn -s java-assignment-architect/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
 ```
 
 Testes de integração com Dev Services precisam de Docker.
