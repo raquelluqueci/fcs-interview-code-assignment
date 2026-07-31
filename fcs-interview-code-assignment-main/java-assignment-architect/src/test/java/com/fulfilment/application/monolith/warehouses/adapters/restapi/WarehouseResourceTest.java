@@ -2,8 +2,14 @@ package com.fulfilment.application.monolith.warehouses.adapters.restapi;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.fulfilment.application.monolith.warehouses.adapters.database.WarehouseRepository;
+import jakarta.transaction.Transactional;
 import io.quarkus.test.junit.QuarkusTest;
+import java.lang.reflect.Method;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -115,6 +121,39 @@ public class WarehouseResourceTest {
   }
 
   @Test
+  public void testListWarehousesExcludesArchivedWarehouses() {
+    String id =
+        given()
+            .contentType("application/json")
+            .body(
+                Map.of(
+                    "businessUnitCode",
+                    "TST.011",
+                    "location",
+                    "AMSTERDAM-001",
+                    "capacity",
+                    10,
+                    "stock",
+                    1))
+            .when()
+            .post("warehouse")
+            .then()
+            .statusCode(201)
+            .extract()
+            .path("id")
+            .toString();
+
+    given().when().delete("warehouse/{id}", id).then().statusCode(204);
+
+    given()
+        .when()
+        .get("warehouse")
+        .then()
+        .statusCode(200)
+        .body("businessUnitCode", everyItem(not(equalTo("TST.011"))));
+  }
+
+  @Test
   public void testReplaceUnknownBusinessUnitCodeReturns404() {
     given()
         .contentType("application/json")
@@ -183,5 +222,31 @@ public class WarehouseResourceTest {
         .post("warehouse/{businessUnitCode}/replacement", "TST.010")
         .then()
         .statusCode(400);
+  }
+
+  @Test
+  public void testReplaceWarehouseRestBoundaryIsTransactionalAndRepositoryMethodsJoinIt()
+      throws NoSuchMethodException {
+    Method replaceMethod =
+        WarehouseResourceImpl.class.getMethod(
+            "replaceTheCurrentActiveWarehouse", String.class, com.warehouse.api.beans.Warehouse.class);
+    assertEquals(Transactional.TxType.REQUIRED, replaceMethod.getAnnotation(Transactional.class).value());
+
+    assertEquals(
+        Transactional.TxType.REQUIRED,
+        WarehouseRepository.class
+            .getMethod(
+                "create",
+                com.fulfilment.application.monolith.warehouses.domain.models.Warehouse.class)
+            .getAnnotation(Transactional.class)
+            .value());
+    assertEquals(
+        Transactional.TxType.REQUIRED,
+        WarehouseRepository.class
+            .getMethod(
+                "update",
+                com.fulfilment.application.monolith.warehouses.domain.models.Warehouse.class)
+            .getAnnotation(Transactional.class)
+            .value());
   }
 }

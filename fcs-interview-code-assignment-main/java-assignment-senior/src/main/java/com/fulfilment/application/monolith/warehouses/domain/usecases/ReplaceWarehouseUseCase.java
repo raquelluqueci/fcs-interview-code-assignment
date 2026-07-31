@@ -54,6 +54,32 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
           "The new warehouse stock must match the stock of the replaced warehouse.", 400);
     }
 
+    long activeWarehousesAtLocation =
+        warehouseStore.getAll().stream()
+            .filter(w -> w.archivedAt == null)
+            .filter(w -> location.identification.equals(w.location))
+            .filter(w -> !w.businessUnitCode.equals(existing.businessUnitCode))
+            .count();
+    if (activeWarehousesAtLocation >= location.maxNumberOfWarehouses) {
+      throw new WebApplicationException(
+          "Maximum number of warehouses already reached for location " + location.identification, 400);
+    }
+
+    int activeCapacityAtLocation =
+        warehouseStore.getAll().stream()
+            .filter(w -> w.archivedAt == null)
+            .filter(w -> location.identification.equals(w.location))
+            .filter(w -> !w.businessUnitCode.equals(existing.businessUnitCode))
+            .map(w -> w.capacity)
+            .filter(capacity -> capacity != null)
+            .reduce(0, Integer::sum);
+    if (activeCapacityAtLocation + newWarehouse.capacity > location.maxCapacity) {
+      throw new WebApplicationException(
+          "Warehouse capacity exceeds the maximum capacity allowed for location "
+              + location.identification,
+          400);
+    }
+
     existing.archivedAt = LocalDateTime.now();
     warehouseStore.update(existing);
 

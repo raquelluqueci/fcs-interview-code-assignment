@@ -46,6 +46,19 @@ public class FulfilmentResourceTest {
         .getString("id");
   }
 
+  private String createStore(String name) {
+    return given()
+        .contentType("application/json")
+        .body("{\"name\":\"" + name + "\",\"quantityProductsInStock\":0}")
+        .when()
+        .post("store")
+        .then()
+        .statusCode(201)
+        .extract()
+        .jsonPath()
+        .getString("id");
+  }
+
   private void associate(String warehouseId, String productId, String storeId) {
     given()
         .contentType("application/json")
@@ -162,13 +175,47 @@ public class FulfilmentResourceTest {
   }
 
   @Test
+  public void testExistingWarehouseCanBeReusedWhenStoreHasMaxDistinctWarehouses() {
+    String store = createStore("FULFIL-STORE-REUSE-WAREHOUSE");
+    String firstProduct = createProduct("FULFIL-REUSE-WH-PRODUCT-1");
+    String secondProduct = createProduct("FULFIL-REUSE-WH-PRODUCT-2");
+    String thirdProduct = createProduct("FULFIL-REUSE-WH-PRODUCT-3");
+    String fourthProduct = createProduct("FULFIL-REUSE-WH-PRODUCT-4");
+
+    associate("1", firstProduct, store);
+    associate("2", secondProduct, store);
+    associate("3", thirdProduct, store);
+
+    given()
+        .contentType("application/json")
+        .body(fulfilmentJson("3", fourthProduct, store))
+        .when()
+        .post(PATH)
+        .then()
+        .statusCode(201);
+  }
+
+  @Test
   public void testMaxFiveProductsPerWarehouseIsEnforced() {
     String warehouse = createWarehouse("MWH.901");
+    String firstProduct = null;
 
     for (int i = 0; i < 5; i++) {
       String product = createProduct("FULFIL-PRODUCT-WH-" + i);
+      if (firstProduct == null) {
+        firstProduct = product;
+      }
       associate(warehouse, product, "1");
     }
+
+    String reuseStore = createStore("FULFIL-STORE-REUSE-PRODUCT");
+    given()
+        .contentType("application/json")
+        .body(fulfilmentJson(warehouse, firstProduct, reuseStore))
+        .when()
+        .post(PATH)
+        .then()
+        .statusCode(201);
 
     String sixthProduct = createProduct("FULFIL-PRODUCT-WH-6");
 

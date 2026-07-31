@@ -83,6 +83,50 @@ public class ReplaceWarehouseUseCaseTest {
     assertEquals(400, exception.getResponse().getStatus());
   }
 
+  @Test
+  public void testReplaceExcludesReplacedWarehouseFromLocationCapacity() {
+    Warehouse existing = newWarehouse("MWH.100", "ZWOLLE-001", 35, 10);
+    warehouseStore.warehouses.add(existing);
+
+    Warehouse replacement = newWarehouse("MWH.100", "ZWOLLE-001", 35, 10);
+
+    useCase.replace(replacement);
+
+    assertNotNull(existing.archivedAt);
+    assertNotNull(replacement.createdAt);
+  }
+
+  @Test
+  public void testReplaceWithAggregateCapacityExceedingDestinationLocationFails() {
+    location.maxNumberOfWarehouses = 2;
+    Warehouse existing = newWarehouse("MWH.100", "ZWOLLE-001", 10, 10);
+    warehouseStore.warehouses.add(existing);
+    warehouseStore.warehouses.add(newWarehouse("MWH.200", "ZWOLLE-001", 25, 5));
+
+    Warehouse replacement = newWarehouse("MWH.100", "ZWOLLE-001", 20, 10);
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class, () -> useCase.replace(replacement));
+    assertEquals(400, exception.getResponse().getStatus());
+  }
+
+  @Test
+  public void testReplaceWithDestinationMaxWarehousesReachedFails() {
+    Location oldLocation = new Location("AMSTERDAM-001", 5, 100);
+    Location fullLocation = new Location("ZWOLLE-001", 1, 40);
+    useCase = new ReplaceWarehouseUseCase(warehouseStore, new MultiLocationResolver(oldLocation, fullLocation));
+
+    Warehouse existing = newWarehouse("MWH.100", "AMSTERDAM-001", 10, 5);
+    warehouseStore.warehouses.add(existing);
+    warehouseStore.warehouses.add(newWarehouse("MWH.200", "ZWOLLE-001", 10, 5));
+
+    Warehouse replacement = newWarehouse("MWH.100", "ZWOLLE-001", 10, 5);
+
+    WebApplicationException exception =
+        assertThrows(WebApplicationException.class, () -> useCase.replace(replacement));
+    assertEquals(400, exception.getResponse().getStatus());
+  }
+
   static class CollectionWarehouseStore implements WarehouseStore {
     List<Warehouse> warehouses = new ArrayList<>();
 
@@ -134,6 +178,22 @@ public class ReplaceWarehouseUseCaseTest {
     @Override
     public Location resolveByIdentifier(String identifier) {
       return location != null && location.identification.equals(identifier) ? location : null;
+    }
+  }
+
+  static class MultiLocationResolver implements LocationResolver {
+    private final List<Location> locations;
+
+    MultiLocationResolver(Location... locations) {
+      this.locations = List.of(locations);
+    }
+
+    @Override
+    public Location resolveByIdentifier(String identifier) {
+      return locations.stream()
+          .filter(location -> location.identification.equals(identifier))
+          .findFirst()
+          .orElse(null);
     }
   }
 }

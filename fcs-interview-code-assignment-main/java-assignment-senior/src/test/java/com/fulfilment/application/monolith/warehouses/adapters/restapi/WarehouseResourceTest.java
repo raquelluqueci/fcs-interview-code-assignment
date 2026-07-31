@@ -136,7 +136,7 @@ public class WarehouseResourceTest {
     given()
         .contentType("application/json")
         .body(
-            "{\"businessUnitCode\":\"MWH.706\",\"location\":\"AMSTERDAM-002\",\"capacity\":50,\"stock\":20}")
+            "{\"businessUnitCode\":\"MWH.706\",\"location\":\"VETSBY-001\",\"capacity\":50,\"stock\":20}")
         .when()
         .post(PATH)
         .then()
@@ -145,7 +145,7 @@ public class WarehouseResourceTest {
     given()
         .contentType("application/json")
         .body(
-            "{\"businessUnitCode\":\"MWH.706\",\"location\":\"AMSTERDAM-002\",\"capacity\":60,\"stock\":20}")
+            "{\"businessUnitCode\":\"MWH.706\",\"location\":\"VETSBY-001\",\"capacity\":60,\"stock\":20}")
         .when()
         .post(PATH + "/MWH.706/replacement")
         .then()

@@ -67,4 +67,66 @@ public class StoreLegacySyncTest {
         invocation.committedAtCallTime(),
         "legacy gateway must only be called after the update is committed to the database");
   }
+
+  @Test
+  public void patchCanUpdateQuantityProductsInStockToZero() {
+    String id =
+        given()
+            .contentType("application/json")
+            .body("{\"name\":\"PATCH-ZERO\",\"quantityProductsInStock\":9}")
+            .when()
+            .post("/store")
+            .then()
+            .statusCode(201)
+            .extract()
+            .jsonPath()
+            .getString("id");
+    gateway.reset();
+
+    int quantity =
+        given()
+            .contentType("application/json")
+            .body("{\"quantityProductsInStock\":0}")
+            .when()
+            .patch("/store/" + id)
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getInt("quantityProductsInStock");
+
+    assertEquals(0, quantity);
+    assertEquals(1, gateway.invocations().size());
+  }
+
+  @Test
+  public void patchCanUpdateOnlyName() {
+    String id =
+        given()
+            .contentType("application/json")
+            .body("{\"name\":\"PATCH-NAME\",\"quantityProductsInStock\":7}")
+            .when()
+            .post("/store")
+            .then()
+            .statusCode(201)
+            .extract()
+            .jsonPath()
+            .getString("id");
+    gateway.reset();
+
+    int quantity =
+        given()
+            .contentType("application/json")
+            .body("{\"name\":\"PATCH-NAME-RENAMED\"}")
+            .when()
+            .patch("/store/" + id)
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getInt("quantityProductsInStock");
+
+    assertEquals(7, quantity);
+    assertEquals(1, gateway.invocations().size());
+  }
 }

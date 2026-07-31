@@ -36,6 +36,17 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
       throw new WebApplicationException("Location " + warehouse.location + " is not valid.", 400);
     }
 
+    if (warehouse.capacity == null || warehouse.capacity > location.maxCapacity) {
+      throw new WebApplicationException(
+          "Warehouse capacity exceeds the maximum capacity allowed for location "
+              + location.identification,
+          400);
+    }
+
+    if (warehouse.stock == null || warehouse.stock > warehouse.capacity) {
+      throw new WebApplicationException("Warehouse capacity cannot be lower than its stock.", 400);
+    }
+
     long activeWarehousesAtLocation =
         warehouseStore.getAll().stream()
             .filter(w -> w.archivedAt == null)
@@ -46,15 +57,18 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
           "Maximum number of warehouses already reached for location " + location.identification, 400);
     }
 
-    if (warehouse.capacity == null || warehouse.capacity > location.maxCapacity) {
+    int activeCapacityAtLocation =
+        warehouseStore.getAll().stream()
+            .filter(w -> w.archivedAt == null)
+            .filter(w -> location.identification.equals(w.location))
+            .map(w -> w.capacity)
+            .filter(capacity -> capacity != null)
+            .reduce(0, Integer::sum);
+    if (activeCapacityAtLocation + warehouse.capacity > location.maxCapacity) {
       throw new WebApplicationException(
           "Warehouse capacity exceeds the maximum capacity allowed for location "
               + location.identification,
           400);
-    }
-
-    if (warehouse.stock == null || warehouse.stock > warehouse.capacity) {
-      throw new WebApplicationException("Warehouse capacity cannot be lower than its stock.", 400);
     }
 
     warehouse.createdAt = LocalDateTime.now();

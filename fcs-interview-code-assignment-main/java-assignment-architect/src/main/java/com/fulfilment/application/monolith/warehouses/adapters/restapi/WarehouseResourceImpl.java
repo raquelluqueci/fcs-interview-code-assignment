@@ -10,6 +10,7 @@ import com.warehouse.api.WarehouseResource;
 import com.warehouse.api.beans.Warehouse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
@@ -52,6 +53,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   }
 
   @Override
+  @Transactional
   public Warehouse replaceTheCurrentActiveWarehouse(String businessUnitCode, @NotNull Warehouse data) {
     var newWarehouse = toDomainWarehouse(requireWarehousePayload(data));
     // the business unit code identifying the warehouse is carried over from the path,

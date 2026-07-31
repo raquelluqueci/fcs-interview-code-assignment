@@ -67,4 +67,30 @@ public class StoreLegacySyncTest {
         invocation.committedAtCallTime(),
         "legacy gateway must only be called after the update is committed to the database");
   }
+
+  @Test
+  public void patchUpdatesOnlyProvidedName() {
+    given()
+        .contentType("application/json")
+        .body("{\"name\":\"PATCH-NAME-ONLY\"}")
+        .when()
+        .patch("/store/2")
+        .then()
+        .statusCode(200)
+        .body("name", org.hamcrest.Matchers.equalTo("PATCH-NAME-ONLY"))
+        .body("quantityProductsInStock", org.hamcrest.Matchers.equalTo(5));
+  }
+
+  @Test
+  public void patchAllowsZeroQuantityProductsInStock() {
+    given()
+        .contentType("application/json")
+        .body("{\"quantityProductsInStock\":0}")
+        .when()
+        .patch("/store/3")
+        .then()
+        .statusCode(200)
+        .body("name", org.hamcrest.Matchers.equalTo("BESTÅ"))
+        .body("quantityProductsInStock", org.hamcrest.Matchers.equalTo(0));
+  }
 }
