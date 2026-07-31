@@ -6,13 +6,13 @@ COMPOSE := docker compose -f docker-compose.observability.yml
 MAVEN := mvn -s settings-central.xml
 
 .PHONY: help obs-up obs-down obs-ps test-senior test-architect test-all \
-	run-senior run-architect odin-install odin-uninstall metrics-smoke
+	run-senior run-architect run-both metrics-smoke
 
 help:
 	@echo "Targets:"
-	@echo "  obs-up / obs-down     Recruiter observability stack (compose)"
+	@echo "  obs-up / obs-down     Local observability stack (compose)"
 	@echo "  run-senior|architect  quarkus:dev with Dev Services"
-	@echo "  odin-install          Wire scrape + dashboard into local Odin stack"
+	@echo "  run-both              both modules + observability via allen-key.sh --dev"
 	@echo "  metrics-smoke         probe /q/health and /q/metrics on :8080"
 	@echo "  test-senior|architect|all"
 
@@ -34,33 +34,27 @@ test-architect:
 test-all:
 	$(MAVEN) -f pom.xml clean verify
 
-# Override Claude/Codex shell OTEL_* with gRPC → local otelcol :4317
+# Send application telemetry to the local collector.
 OTEL_RUN := env \
 	OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317 \
 	OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
 	OTEL_METRICS_EXPORTER=otlp \
 	OTEL_TRACES_EXPORTER=otlp \
 	OTEL_LOGS_EXPORTER=none \
-	-u OTEL_RESOURCE_ATTRIBUTES \
-	-u CLAUDE_CODE_ENABLE_TELEMETRY \
-	-u OTEL_METRICS_INCLUDE_VERSION \
-	-u OTEL_LOG_TOOL_DETAILS
+	-u OTEL_RESOURCE_ATTRIBUTES
 
 run-senior:
 	set -a; [ -f .env ] && . ./.env; set +a; \
-	$(OTEL_RUN) $(MAVEN) \
+	QUARKUS_HTTP_PORT=$${SENIOR_PORT:-8083} $(OTEL_RUN) $(MAVEN) \
 		-f java-assignment-senior/pom.xml quarkus:dev
 
 run-architect:
 	set -a; [ -f .env ] && . ./.env; set +a; \
-	$(OTEL_RUN) $(MAVEN) \
+	QUARKUS_HTTP_PORT=$${ARCHITECT_PORT:-8082} $(OTEL_RUN) $(MAVEN) \
 		-f java-assignment-architect/pom.xml quarkus:dev
 
-odin-install:
-	./scripts/install-local-odin.sh install
-
-odin-uninstall:
-	./scripts/install-local-odin.sh uninstall
+run-both:
+	./allen-key.sh --dev
 
 metrics-smoke:
 	@wget -qO- http://127.0.0.1:8080/q/health || true; echo

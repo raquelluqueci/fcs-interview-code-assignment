@@ -1,5 +1,4 @@
-# Recruiter path: self-contained observability stack.
-# Do NOT run on Odin MBP while native Prometheus/Grafana/OTEL are up (port clash).
+# Self-contained local observability stack. Published ports bind to loopback.
 # Usage: ./scripts/observability-up.sh  OR  docker compose -f docker-compose.observability.yml up -d
 name: fcs-observability
 
@@ -12,7 +11,7 @@ services:
       POSTGRES_PASSWORD: quarkus_test
       POSTGRES_DB: quarkus_test
     ports:
-      - "15432:5432"
+      - "127.0.0.1:15432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U quarkus_test -d quarkus_test"]
       interval: 5s
@@ -28,9 +27,9 @@ services:
     volumes:
       - ./observability/otel/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8889:8889"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:8889:8889"
 
   prometheus:
     image: prom/prometheus:v2.55.1
@@ -43,7 +42,7 @@ services:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/prometheus/rules:/etc/prometheus/rules:ro
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -54,7 +53,7 @@ services:
     container_name: fcs-grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       GF_USERS_DEFAULT_THEME: dark
@@ -63,7 +62,7 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/etc/grafana/dashboards:ro
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - prometheus
 
