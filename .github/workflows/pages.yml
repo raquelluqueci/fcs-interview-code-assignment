@@ -26,19 +26,24 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Assemble site sources
+        env:
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           mkdir -p _site/fcs-interview-code-assignment-main/docs
           cp -R fcs-interview-code-assignment-main/docs/screenshots \
                 _site/fcs-interview-code-assignment-main/docs/screenshots
-          cp README.md _site/index.md
-          cp README-br.md _site/br.md
-          # Cross-link the rendered pages instead of the raw markdown files.
+          # Language switcher on top of each page (the raw READMEs carry none).
+          printf '%s\n\n' '[🇧🇷 Versão em português](br.html)' > _site/index.md
+          cat README.md >> _site/index.md
+          printf '%s\n\n' '[🇬🇧 English version](index.html)' > _site/br.md
+          cat README-br.md >> _site/br.md
+          # Rewrite raw-markdown cross-references to the rendered pages.
           sed -i 's#(README-br\.md)#(br.html)#g' _site/index.md
           sed -i 's#(README\.md)#(index.html)#g' _site/br.md
           # Every other relative repo link points at the GitHub tree; only the
           # screenshots ship with the site. http(s), anchors and .png stay as-is.
-          perl -pi -e 's{\]\((?!https?://)(?!#)([^)]+?)\)}{$1 =~ /\.(png|html)$/ ? "]($1)" : "](https://github.com/${{ github.repository }}/blob/main/$1)"}ge' \
+          perl -pi -e 's{\]\((?!https?://)(?!#)([^)]+?)\)}{$1 =~ /\.(png|html)$/ ? "]($1)" : "](https://github.com/$ENV{REPO}/blob/main/$1)"}ge' \
                _site/index.md _site/br.md
 
       - name: Render HTML (pandoc)
