@@ -19,6 +19,8 @@
 #  Usage        : ./allen-key.sh          (prod fast-jars; swagger-ui at /q/swagger-ui)
 #                 ./allen-key.sh --dev    (quarkus:dev containers; Dev UI at /q/dev-ui)
 #  Exit codes   : 0 ok | 1 missing engine/build failure | 130 Ctrl+C
+#
+#  Author       : tfantas — https://www.tfantas.io — Lisbon, July 2026
 # ============================================================================
 set -Eeuo pipefail
 

@@ -1,3 +1,5 @@
+# FCS warehouse fulfilment — local dev targets.
+# Author: tfantas — https://www.tfantas.io — Lisbon, July 2026
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 

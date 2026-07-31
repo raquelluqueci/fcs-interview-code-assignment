@@ -386,3 +386,7 @@ FnCS_Casestudy2/                         # raiz do repositório
                 ├── adapters/{database,restapi}/
                 └── domain/{models,ports,usecases}/
 ```
+
+---
+
+Feito em Lisboa 🇵🇹 por [tfantas](https://www.tfantas.io) — Julho de 2026

@@ -384,3 +384,7 @@ FnCS_Casestudy2/                         # repo root
                 ├── adapters/{database,restapi}/
                 └── domain/{models,ports,usecases}/
 ```
+
+---
+
+Crafted in Lisbon 🇵🇹 by [tfantas](https://www.tfantas.io) — July 2026

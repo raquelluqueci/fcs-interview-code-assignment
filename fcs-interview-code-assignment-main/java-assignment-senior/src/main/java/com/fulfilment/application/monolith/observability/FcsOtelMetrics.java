@@ -15,6 +15,8 @@ import jakarta.inject.Inject;
  *     Exported via OTLP (gRPC) to the collector, then scraped by Prometheus on :8889.
  * PT: Metricas OpenTelemetry de dominio e enriquecimento de spans.
  *     Exportadas via OTLP (gRPC) para o collector e depois scraped pelo Prometheus em :8889.
+ *
+ * @author tfantas — <a href="https://www.tfantas.io">www.tfantas.io</a> — Lisbon, July 2026
  */
 @ApplicationScoped
 public class FcsOtelMetrics {

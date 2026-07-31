@@ -13,6 +13,8 @@ import jakarta.inject.Singleton;
  * PT: Activa buckets de histograma Prometheus nos timers HTTP para o Grafana
  *     calcular p50/p95/p99 com histogram_quantile. O Quarkus 3.13 nao expoe uma
  *     property nativa para isto.
+ *
+ * @author tfantas — <a href="https://www.tfantas.io">www.tfantas.io</a> — Lisbon, July 2026
  */
 @Singleton
 public class HttpServerHistogramFilter {

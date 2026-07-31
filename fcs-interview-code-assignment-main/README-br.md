@@ -148,3 +148,7 @@ Testes de integração com Dev Services precisam de Docker.
 | Histograms Micrometer (p95) | `…/observability/HttpServerHistogramFilter.java` |
 
 Em testes: `%test.quarkus.otel.sdk.disabled=true`.
+
+---
+
+Feito em Lisboa 🇵🇹 por [tfantas](https://www.tfantas.io) — Julho de 2026

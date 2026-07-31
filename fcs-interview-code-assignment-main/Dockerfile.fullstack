@@ -6,6 +6,8 @@
 #   docker build -f Dockerfile.fullstack --build-arg MODULE=java-assignment-architect -t fcs-architect .
 #
 # Exit artifact: Quarkus fast-jar layout under /deployments, listening on :8080.
+#
+# Author: tfantas — https://www.tfantas.io — Lisbon, July 2026
 
 FROM docker.io/library/maven:3.9-eclipse-temurin-17 AS build
 ARG MODULE

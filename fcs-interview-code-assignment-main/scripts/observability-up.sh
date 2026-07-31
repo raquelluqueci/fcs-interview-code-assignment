@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Start the self-contained observability stack (fail closed on port clashes).
+# Author: tfantas — https://www.tfantas.io — Lisbon, July 2026
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

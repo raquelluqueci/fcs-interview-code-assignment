@@ -163,3 +163,7 @@ Integration tests that need Dev Services require Docker. Unit tests (use cases, 
 | Histogram buckets (Micrometer p95) | `…/observability/HttpServerHistogramFilter.java` |
 
 Tests force `%test.quarkus.otel.sdk.disabled=true` so Surefire does not depend on a collector.
+
+---
+
+Crafted in Lisbon 🇵🇹 by [tfantas](https://www.tfantas.io) — July 2026

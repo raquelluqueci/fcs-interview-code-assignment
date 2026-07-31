@@ -9,6 +9,8 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * EN: JAX-RS response filter that emits OpenTelemetry counters for every request.
  * PT: Filtro JAX-RS de resposta que emite contadores OpenTelemetry em cada pedido.
+ *
+ * @author tfantas — <a href="https://www.tfantas.io">www.tfantas.io</a> — Lisbon, July 2026
  */
 @Provider
 public class FcsOtelHttpFilter implements ContainerResponseFilter {
