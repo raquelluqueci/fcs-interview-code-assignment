@@ -1,6 +1,6 @@
 # FCS Interview — Assignment Warehouse Fulfilment
 
-Case study Quarkus 3.13 com **OpenTelemetry**, **Prometheus** e **Grafana** preparados para demo local (e compose para recruters).
+Case study Quarkus 3.13 com **OpenTelemetry**, **Prometheus** e **Grafana** preparados para desenvolvimento local.
 
 English: [README.md](README.md)
 
@@ -34,7 +34,7 @@ Briefing: [`case-study/`](case-study/).
           ├─ metrics ──► job otelcol (:8889)
           └─ traces  ──► exporter debug only (sem Tempo/Jaeger)
                                 │
-                     Prometheus :9090  (/prometheus no Odin)
+                     Prometheus :9090
                                 ▼
                      Grafana :3001     (painéis = Micrometer)
 ```
@@ -53,22 +53,18 @@ Configs versionadas em [`observability/`](observability/) — o zip de submissã
 - **JDK 17**
 - Maven 3.9+
 - PostgreSQL (Dev Services com Docker, ou Postgres local)
-- Stack opcional (Odin): Prometheus + Grafana + otelcol-contrib
+- Docker ou Podman para a stack local autocontida e os Dev Services
 
-**Importante:** shells Claude/Codex exportam OTEL_*. O Makefile **define** os valores correctos desta app (`ENDPOINT=http://127.0.0.1:4317`, `PROTOCOL=grpc`). A dependência `okhttp` no POM é necessária para o sender OTLP gRPC.
+O Makefile define o endpoint e o protocolo OTLP necessários pelo collector local. A dependência `okhttp` no POM é necessária para o sender OTLP gRPC.
 
-## Arranque rápido (stack Odin)
+## Arranque rápido
 
 ```bash
-export JAVA_HOME=/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
-
-make odin-install    # scrape + dashboard no Prometheus/Grafana nativos
-make run-senior      # ou: make run-architect
+export JAVA_HOME=/caminho/para/jdk-17
+./allen-key.sh --dev
 ```
 
-App: `http://127.0.0.1:8080`  
-Health: `http://127.0.0.1:8080/q/health`  
-Métricas Micrometer: `http://127.0.0.1:8080/q/metrics`
+O script imprime portas aleatórias em loopback para os dois módulos. Cada módulo expõe `/q/swagger-ui`, `/q/dev-ui`, `/q/health` e `/q/metrics`.
 
 ### Prometheus — como ver dados (não é a página em branco)
 
@@ -106,13 +102,14 @@ wget -qO- http://127.0.0.1:8889/metrics | grep fcs_
 Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)  
 JSON: [`observability/grafana/dashboards/fcs-fulfilment-obs.json`](observability/grafana/dashboards/fcs-fulfilment-obs.json)
 
-## Caminho recruter (Docker Compose)
+## Stack de observabilidade com Docker Compose
 
 Com portas `9090/3001/4317/4318/8889/15432` livres:
 
 ```bash
+cp .env.example .env
 ./scripts/observability-up.sh
-make run-senior
+make run-senior    # senior :8083; architect usa :8082
 ./scripts/observability-down.sh
 ```
 
@@ -122,21 +119,20 @@ Ficheiro: [`docker-compose.observability.yml`](docker-compose.observability.yml)
 
 ```
 observability/
-  otel/          # collector para compose
+  otel/          # collector local
   prometheus/    # scrape, rules, config compose
   grafana/       # dashboard + provisioning
-  nginx/         # snippets opcionais do gateway
 scripts/
-  install-local-odin.sh
   observability-up.sh / -down.sh
 ```
 
 ## Build e testes
 
 ```bash
-export JAVA_HOME=…/openjdk@17…
-mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-senior/pom.xml test
-mvn -s java-assignment-architect/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
+export JAVA_HOME=/caminho/para/jdk-17
+mvn -s settings-central.xml -f pom.xml clean verify
+mvn -s settings-central.xml -f java-assignment-senior/pom.xml test
+mvn -s settings-central.xml -f java-assignment-architect/pom.xml test
 ```
 
 Testes de integração com Dev Services precisam de Docker.

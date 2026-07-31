@@ -7,6 +7,9 @@ AVALIACAO_*.md
 EVALUATION_*.md
 **/.DS_Store
 .omc/
+.omx/
+.claude/
+.stop-transcript*.jsonl
 __MACOSX/
 .git-ok.sh
 **/target/

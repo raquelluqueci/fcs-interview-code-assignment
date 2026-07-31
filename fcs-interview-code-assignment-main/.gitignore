@@ -216,6 +216,7 @@ observability/evidence/
 **/docker-data/
 **/*.pid
 scripts/install-local-odin.sh
+observability/nginx/
 
 # Patch leftovers
 *.patch

@@ -1,6 +1,6 @@
 # FCS Interview — Warehouse Fulfilment Assignment
 
-Quarkus 3.13 fulfilment case study with **OpenTelemetry**, **Prometheus** and **Grafana** wired for local demo (and recruiter compose).
+Quarkus 3.13 fulfilment case study with **OpenTelemetry**, **Prometheus** and **Grafana** wired for local development.
 
 Portuguese: [README-br.md](README-br.md)
 
@@ -34,7 +34,7 @@ Case study brief: [`case-study/`](case-study/).
           ├─ metrics ──► Prometheus job otelcol (:8889)
           └─ traces  ──► debug exporter only (no Tempo/Jaeger)
                                 │
-                     Prometheus :9090  (/prometheus on Odin gateway)
+                     Prometheus :9090
                                 ▼
                      Grafana :3001     (/grafana)
                      uid: fcs-fulfilment-obs  (panels = Micrometer job)
@@ -54,26 +54,18 @@ All configs live under [`observability/`](observability/) so the submission is s
 - **JDK 17** (`JAVA_HOME` pointing at JDK 17 — Quarkus 3.13)
 - Maven 3.9+ (or use the module `mvnw` if wrapper jars are present)
 - PostgreSQL (Dev Services if Docker is available; otherwise local Postgres)
-- Optional local stack (Odin): Prometheus, Grafana, otelcol-contrib already running
+- Docker or Podman for the self-contained local stack and Dev Services
 
-**Important:** Claude/Codex shells often export OTEL_*. The Makefile **sets** the correct values for this app (`OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317`, `PROTOCOL=grpc`) so host otelcol receives traces/metrics. `okhttp` is a runtime dependency for the gRPC OTLP sender.
+The Makefile sets the OTLP endpoint and protocol required by the local collector. `okhttp` is a runtime dependency for the gRPC OTLP sender.
 
-## Quick start (local Odin stack)
+## Quick start
 
 ```bash
-export JAVA_HOME=/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
-
-# One-time: inject scrape job + Grafana dashboard into native stack
-make odin-install
-
-# Run senior (or architect) — unsets hostile OTEL_* from the shell
-make run-senior
-# make run-architect
+export JAVA_HOME=/path/to/jdk-17
+./allen-key.sh --dev
 ```
 
-- App: `http://127.0.0.1:8080`
-- Health: `http://127.0.0.1:8080/q/health`
-- Metrics (Micrometer): `http://127.0.0.1:8080/q/metrics`
+The script prints random loopback ports for both modules. Each exposes `/q/swagger-ui`, `/q/dev-ui`, `/q/health`, and `/q/metrics`.
 
 ### Prometheus — queries that show data
 
@@ -118,13 +110,14 @@ wget -qO- http://127.0.0.1:8889/metrics | grep fcs_
 Dashboard: [http://localhost/grafana/d/fcs-fulfilment-obs/](http://localhost/grafana/d/fcs-fulfilment-obs/)
 JSON source: [`observability/grafana/dashboards/fcs-fulfilment-obs.json`](observability/grafana/dashboards/fcs-fulfilment-obs.json)
 
-## Recruiter path (Docker Compose)
+## Docker Compose observability stack
 
 When host ports `9090/3001/4317/4318/8889/15432` are free:
 
 ```bash
-./scripts/observability-up.sh   # fail-closed if ports busy
-make run-senior                 # app on host :8080
+cp .env.example .env
+./scripts/observability-up.sh
+make run-senior                 # senior :8083; architect uses :8082
 # Grafana http://localhost:3001  Prometheus http://localhost:9090
 ./scripts/observability-down.sh
 ```
@@ -135,7 +128,7 @@ Compose file: [`docker-compose.observability.yml`](docker-compose.observability.
 
 ```
 observability/
-  otel/otel-collector-config.yaml     # recruiter collector
+  otel/otel-collector-config.yaml     # local collector
   prometheus/
     scrape-fcs-fulfilment.yml          # host scrape fragment
     prometheus.yml                    # compose full config
@@ -144,18 +137,17 @@ observability/
   grafana/
     dashboards/fcs-fulfilment-obs.json
     provisioning/...
-  nginx/                              # optional gateway snippets
 scripts/
-  install-local-odin.sh               # wire host Prometheus + Grafana
   observability-up.sh / -down.sh
 ```
 
 ## Build & test
 
 ```bash
-export JAVA_HOME=…/openjdk@17…
-mvn -s java-assignment-senior/mvn-settings-local.xml -f java-assignment-senior/pom.xml test
-mvn -s java-assignment-architect/mvn-settings-local.xml -f java-assignment-architect/pom.xml test
+export JAVA_HOME=/path/to/jdk-17
+mvn -s settings-central.xml -f pom.xml clean verify
+mvn -s settings-central.xml -f java-assignment-senior/pom.xml test
+mvn -s settings-central.xml -f java-assignment-architect/pom.xml test
 ```
 
 Integration tests that need Dev Services require Docker. Unit tests (use cases, location) do not.
